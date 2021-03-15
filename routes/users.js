@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 const mysql = require('mysql');
 require('dotenv').config()
-const axios = require('axios');
+//const axios = require('axios');
 
 //sql connection
 console.log(process.env.DB_HOST)
