@@ -49,14 +49,15 @@ router.get("/search",(req,res) => {
 
     //capture first argument
     var idtosearch= req.query.id
+    console.log(idtosearch)
 
    // myquery= "SELECT * FROM sql_store.customers WHERE customer_id="+nametosearch
    myquery= "SELECT * FROM mydb.inventory_part WHERE part_id="+idtosearch
     connection.query(myquery, function (err, rows, fields) {
       if (err) throw err
   
-      console.log('The solution is: ', rows[0])
-      res.json(rows[0]);
+      console.log('The solution is: ', rows)
+      res.json(rows);
     })
 
     console.log('finished route')
