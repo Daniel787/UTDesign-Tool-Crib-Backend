@@ -22,7 +22,7 @@ const pool = mysql.createPool({
 });
 
 
-//i.e. http://localhost:3000/inventory/search?id=12345
+//i.e. http://localhost:port/inventory/search?id=12345
 router.get("/",(req,res) => {
   console.log(req.query.id)
   pool.getConnection((err, connection) => {
@@ -41,7 +41,7 @@ router.get("/",(req,res) => {
 })
 
 
-//i.e. http://localhost:3000/inventory/search?id=12345
+//i.e. http://localhost:port/inventory/search?id=12345
 router.get("/search",(req,res) => {
   console.log(req.query.id)
   pool.getConnection((err, connection) => {
@@ -65,6 +65,3 @@ router.get("/search",(req,res) => {
 
 
 module.exports = router;
-
-//'select * from mydb.rental_tool'npm
-//'select * from mydb.group where mydb.group.group_id in (select mydb.student_groups.group_id from mydb.student_groups where mydb.student_groups.net_id in (select mydb.rental.net_id from mydb.rental where return_date is null AND due_date < now()) );'

@@ -7,8 +7,9 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var app = express();
 
-app.listen(3006, () => {
-  console.log('Go to http://localhost:3000/inventory to see inventory');
+console.log(process.env.PORT);
+app.listen(process.env.PORT || 3006, () => {
+  console.log('Go to http://localhost:'+(process.env.PORT || 3006)+'/inventory to see inventory');
  });
 
 // view engine setup
@@ -25,9 +26,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var inventoryRouter = require('./routes/inventory');
+var toolsRouter = require('./routes/tools');
+var studentRouter = require('./routes/student');
+var groupRouter = require('./routes/group');
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/inventory', inventoryRouter);
+app.use('/tools', toolsRouter);
+app.use('/student', studentRouter);
+app.use('/group', groupRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

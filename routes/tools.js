@@ -37,7 +37,7 @@ router.get("/",(req,res) => {
 })
 
 
-//i.e. http://localhost:3000/tools/search?id=111
+//i.e. http://localhost:port/tools/search?id=111
 router.get("/search",(req,res) => {
   pool.getConnection((err, connection) => {
     if(err) throw err;

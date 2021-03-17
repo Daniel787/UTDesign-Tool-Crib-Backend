@@ -37,7 +37,7 @@ router.get("/",(req,res) => {
 })
 
 
-//i.e. http://localhost:3000/group/search?id=357
+//i.e. http://localhost:port/group/search?id=357
 router.get("/search",(req,res) => {
   pool.getConnection((err, connection) => {
     if(err) throw err;

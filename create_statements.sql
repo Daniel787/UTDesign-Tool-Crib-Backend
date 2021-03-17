@@ -245,7 +245,7 @@ insert into mydb.rental_tool (tool_id, name) VALUES
 (222, "screwdriver"),
 (333, "drill");
 
-insert into mydb.transaction (transcation_id, group_id, net_id, date, type) values
+insert into mydb.transaction (transaction_id, group_id, net_id, date, type) values
 (1,  24, 180002, '2021-02-13T08:34:09', 'rent'),
 (2,  24, 180002, '2021-02-13T08:34:09', 'rent'),
 (3,  24, 180004, '2021-02-14T04:00:00', 'rent'),
