@@ -2,23 +2,22 @@ var express = require('express');
 var router = express.Router();
 const mysql = require('mysql');
 require('dotenv').config()
-//const axios = require('axios');
 
 //sql connection
 console.log(process.env.DB_HOST)
 var connection = mysql.createConnection({
   
-  host:'localhost', //changed, remember to put strings here :)
-  user:'root',
-  password:'password05',
-  database:'mydb'
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME
 })
 
 const pool = mysql.createPool({
-  host     : 'localhost',
-  user     : 'root',
-  password : 'password05',
-  database : 'mydb',
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
   connectionLimit:10
 });
 

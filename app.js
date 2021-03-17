@@ -5,18 +5,11 @@ const mysql      = require('mysql');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-var inventoryRouter = require('./routes/inventory');
-
 var app = express();
 
-
 app.listen(3006, () => {
-  console.log('Go to http://localhost:3000/posts to see posts');
+  console.log('Go to http://localhost:3000/inventory to see inventory');
  });
-
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -28,6 +21,10 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+//routers
+var indexRouter = require('./routes/index');
+var usersRouter = require('./routes/users');
+var inventoryRouter = require('./routes/inventory');
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/inventory', inventoryRouter);
