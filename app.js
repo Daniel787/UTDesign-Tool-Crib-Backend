@@ -8,7 +8,6 @@ var logger = require('morgan');
 const cors = require('cors') 
 var app = express();
 
-console.log(process.env.PORT);
 app.listen(process.env.PORT || 3006, () => {
   console.log('Go to http://localhost:'+(process.env.PORT || 3006)+'/inventory to see inventory');
  });
@@ -25,12 +24,12 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 //routers
-var indexRouter = require('./routes/index');
+var rootRouter = require('./routes/root');
 var inventoryRouter = require('./routes/inventory');
 var toolsRouter = require('./routes/tools');
 var studentRouter = require('./routes/student');
 var groupRouter = require('./routes/group');
-app.use('/', indexRouter);
+app.use('/', rootRouter);
 app.use('/inventory', inventoryRouter);
 app.use('/tools', toolsRouter);
 app.use('/student', studentRouter);

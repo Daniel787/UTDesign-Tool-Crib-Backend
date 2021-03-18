@@ -267,29 +267,19 @@ insert into mydb.rented_tool (transaction_id, tool_id, returned_date, notificati
 
 
 
-
-
-
-
-
-
-
-
-
-
 -- queries
 -- set manual holds
-update mydb.student set student_hold=true where net_id in (180004, 180007);
+-- update mydb.student set student_hold=true where net_id in (180004, 180007);
 
 -- unreturned tools
-select group_id, net_id, mydb.rental_tool.tool_id, mydb.rental_tool.name,  mydb.transaction.date as rental_start 
-from mydb.transaction, mydb.rented_tool, mydb.rental_tool 
-where mydb.transaction.transaction_id= mydb.rented_tool.transaction_id 
-	and mydb.rented_tool.tool_id = mydb.rental_tool.tool_id
-	and mydb.rented_tool.returned_date is null;
+-- select group_id, net_id, mydb.rental_tool.tool_id, mydb.rental_tool.name,  mydb.transaction.date as rental_start 
+-- from mydb.transaction, mydb.rented_tool, mydb.rental_tool 
+-- where mydb.transaction.transaction_id= mydb.rented_tool.transaction_id 
+-- 	and mydb.rented_tool.tool_id = mydb.rental_tool.tool_id
+-- 	and mydb.rented_tool.returned_date is null;
 
 -- all students in group 357
-select * from mydb.student
-where mydb.student.net_id
-	in (select net_id from mydb.group_has_student
-	where mydb.group_has_student.group_id = 357);
+-- select * from mydb.student
+--where mydb.student.net_id
+--	in (select net_id from mydb.group_has_student
+--	where mydb.group_has_student.group_id = 357);
