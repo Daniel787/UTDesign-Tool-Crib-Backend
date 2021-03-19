@@ -18,7 +18,7 @@ USE `mydb` ;
 -- Table `mydb`.`Student`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `mydb`.`Student` (
-  `net_id` INT NOT NULL,
+  `net_id` VARCHAR(16) NOT NULL,
   `email` VARCHAR(45) NOT NULL,
   `utd_id` INT NULL,
   `student_hold` TINYINT NULL,
@@ -42,7 +42,7 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `mydb`.`Group_Has_Student` (
   `group_id` INT NOT NULL,
-  `net_id` INT NOT NULL,
+  `net_id` VARCHAR(16) NOT NULL,
   PRIMARY KEY (`group_id`, `net_id`),
   INDEX `fk_GrouphasStudent_Group1_idx` (`group_id` ASC) VISIBLE,
   INDEX `fk_GrouphasStudent_Student1_idx` (`net_id` ASC) VISIBLE,
@@ -65,7 +65,7 @@ ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `mydb`.`Transaction` (
   `transaction_id` INT NOT NULL,
   `group_id` INT NOT NULL,
-  `net_id` INT NOT NULL,
+  `net_id` VARCHAR(16) NOT NULL,
   `date` DATETIME(3) NOT NULL,
   `type` VARCHAR(10) NULL,
   PRIMARY KEY (`transaction_id`),
@@ -223,22 +223,22 @@ insert into mydb.inventory_part (part_id, name, quantity_available, current_cost
 (35791, "hot glue stick", 4, .50); -- 4 hot glue gun sticks in stock, 0.50 dollars per stick
 
 insert into mydb.student (net_id, email, utd_id, student_hold) values
-(180002, "002@utdallas", 2, false),
-(180004, "004@utdallas", 4, true),
-(180003, "003@utdallas", 3, false),
-(180005, "005@utdallas", 5, false),
-(180007, "007@utdallas", 7, true);
+('abc180002', "002@utdallas", 2, false),
+('adf180004', "004@utdallas", 4, true),
+('bcd180003', "003@utdallas", 3, false),
+('bef180005', "005@utdallas", 5, false),
+('bgh180007', "007@utdallas", 7, true);
 
 insert into mydb.groups (group_id, group_name, group_sponsor) VALUES
 (24, "epics group", "ntafos"),
 (357, "toolshed group", "robles");
 
 insert into mydb.group_has_student (group_id, net_id) VALUES
-(24,  180002),
-(24,  180004),
-(357, 180003),
-(357, 180005),
-(357, 180007);
+(24,  'abc180002'),
+(24,  'adf180004'),
+(357, 'bcd180003'),
+(357, 'bef180005'),
+(357, 'bgh180007');
 
 insert into mydb.rental_tool (tool_id, name) VALUES
 (111, "hammer"),
@@ -246,13 +246,13 @@ insert into mydb.rental_tool (tool_id, name) VALUES
 (333, "drill");
 
 insert into mydb.transaction (transaction_id, group_id, net_id, date, type) values
-(1,  24, 180002, '2021-02-13T08:34:09', 'rent'),
-(2,  24, 180002, '2021-02-13T08:34:09', 'rent'),
-(3,  24, 180004, '2021-02-14T04:00:00', 'rent'),
-(4, 357, 180003, '2021-02-18T04:03:03', 'rent'),
-(5, 357, 180003, '2021-02-18T06:04:04', 'rent'),
-(6, 357, 180005, '2021-02-18T07:01:01', 'rent'),
-(7, 357, 180007, '2021-02-22T14:15:00', 'rent');
+(1,  24, 'abc180002', '2021-02-13T08:34:09', 'rent'),
+(2,  24, 'abc180002', '2021-02-13T08:34:09', 'rent'),
+(3,  24, 'adf180004', '2021-02-14T04:00:00', 'rent'),
+(4, 357, 'bcd180003', '2021-02-18T04:03:03', 'rent'),
+(5, 357, 'bcd180003', '2021-02-18T06:04:04', 'rent'),
+(6, 357, 'bef180005', '2021-02-18T07:01:01', 'rent'),
+(7, 357, 'bgh180007', '2021-02-22T14:15:00', 'rent');
 
 insert into mydb.rented_tool (transaction_id, tool_id, returned_date, notification_sent) values
 (1, 111, '2021-02-13T10:05:00', false),
