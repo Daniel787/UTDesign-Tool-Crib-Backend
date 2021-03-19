@@ -28,5 +28,21 @@ router.get("/search",(req,res) => {
 
   console.log('finished route')
 });
+ 
+//i.e. http://localhost:port/tools/searchname?name=ham
+router.get("/searchname",(req,res) => {
+  //arguments
+  var name= req.query.name
+
+    myquery= "SELECT * FROM mydb.rental_tool WHERE LOWER(name) LIKE LOWER('%"+ name+ "%')"
+    pool.query(myquery, function (err, rows, fields) {
+      if (err) throw err
+  
+      console.log('The solution is: ', rows)
+      res.json(rows);
+    })
+
+    console.log('finished route')
+});
 
 module.exports = router;

@@ -29,4 +29,18 @@ router.get("/search",(req,res) => {
     console.log('finished route')
 });
 
+//i.e. http://localhost:port/group/searchname?name=TeamName
+router.get("/searchname",(req,res) => {
+  //arguments
+  var name= req.query.name
+
+  myquery= "SELECT * FROM mydb.groups WHERE LOWER(group_name) LIKE LOWER('%"+ name+ "%')"
+  pool.query(myquery, function (err, rows, fields) {
+    if (err) throw err
+    res.json(rows);
+  })
+
+  console.log('finished route')
+});
+
 module.exports = router;
