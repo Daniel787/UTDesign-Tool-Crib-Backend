@@ -9,6 +9,7 @@ var pool = mysql.createPool({
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
   connectionLimit : 20,
+  multipleStatements: true
 });
 
 module.exports = pool;
