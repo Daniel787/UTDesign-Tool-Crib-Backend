@@ -20,8 +20,8 @@ router.get("/search",(req,res) => {
     //arguments
     var id= req.query.id
 
-   myquery= "SELECT * FROM mydb.groups WHERE group_id="+id 
-    pool.query(myquery, function (err, rows, fields) {
+   myquery= "SELECT * FROM mydb.groups WHERE group_id=?" 
+    pool.query(myquery, [id], function (err, rows, fields) {
       if (err) throw err
       res.json(rows);
     })
@@ -29,13 +29,13 @@ router.get("/search",(req,res) => {
     console.log('finished route')
 });
 
-//i.e. http://localhost:port/group/searchname?name=TeamName
+//i.e. http://localhost:port/group/searchname?name =TeamName
 router.get("/searchname",(req,res) => {
   //arguments
   var name= req.query.name
 
-  myquery= "SELECT * FROM mydb.groups WHERE LOWER(group_name) LIKE LOWER('%"+ name+ "%')"
-  pool.query(myquery, function (err, rows, fields) {
+  myquery= "SELECT * FROM mydb.groups WHERE LOWER(group_name) LIKE LOWER(CONCAT('%', ?, '%'))"
+  pool.query(myquery, [name], function (err, rows, fields) {
     if (err) throw err
     res.json(rows);
   })

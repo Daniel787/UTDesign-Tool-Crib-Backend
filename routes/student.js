@@ -19,8 +19,8 @@ router.get("/search",(req,res) => {
   //arguments
   var net_id= req.query.net-id
 
-  myquery= "SELECT * FROM mydb.student WHERE net_id="+net_id 
-  pool.query(myquery, function (err, rows, fields) {
+  myquery= "SELECT * FROM mydb.student WHERE net_id=?"
+  pool.query(myquery, [net_id], function (err, rows, fields) {
     if (err) throw err
     res.json(rows);
   })

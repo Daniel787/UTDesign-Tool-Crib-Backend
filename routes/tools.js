@@ -20,8 +20,8 @@ router.get("/search",(req,res) => {
   //arguments
   var id= req.query.id
 
-  myquery= "SELECT * FROM mydb.rental_tool WHERE tool_id="+id 
-  connection.query(myquery, function (err, rows, fields) {
+  myquery= "SELECT * FROM mydb.rental_tool WHERE tool_id=?"
+  connection.query(myquery, [id], function (err, rows, fields) {
     if (err) throw err
     res.json(rows);
   })
@@ -34,7 +34,7 @@ router.get("/searchname",(req,res) => {
   //arguments
   var name= req.query.name
 
-    myquery= "SELECT * FROM mydb.rental_tool WHERE LOWER(name) LIKE LOWER('%"+ name+ "%')"
+    myquery= "SELECT * FROM mydb.rental_tool WHERE LOWER(name) LIKE LOWER(CONCAT('%', ?, '%'))"
     pool.query(myquery, function (err, rows, fields) {
       if (err) throw err
   
