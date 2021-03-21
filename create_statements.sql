@@ -63,7 +63,7 @@ ENGINE = InnoDB;
 -- Table `mydb`.`Transaction`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `mydb`.`Transaction` (
-  `transaction_id` INT NOT NULL,
+  `transaction_id` binary(16) NOT NULL,
   `group_id` INT NOT NULL,
   `net_id` VARCHAR(16) NOT NULL,
   `date` DATETIME(3) NOT NULL,
@@ -110,7 +110,7 @@ ENGINE = InnoDB;
 -- Table `mydb`.`Rented_Tool`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `mydb`.`Rented_Tool` (
-  `transaction_id` INT NOT NULL,
+  `transaction_id` binary(16) NOT NULL,
   `tool_id` INT NOT NULL,
   `returned_date` DATETIME(3) NULL,
   `notification_sent` TINYINT NULL,
@@ -133,7 +133,7 @@ ENGINE = InnoDB;
 -- Table `mydb`.`Purchased_Part`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `mydb`.`Purchased_Part` (
-  `transaction_id` INT NOT NULL,
+  `transaction_id` binary(16) NOT NULL,
   `part_id` INT NOT NULL,
   `quantity_purchased` INT NOT NULL,
   `purchased_cost` DECIMAL(6,2) NOT NULL,
@@ -176,7 +176,7 @@ ENGINE = InnoDB;
 -- Table `mydb`.`printing`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `mydb`.`printing` (
-  `transaction_id` INT NOT NULL,
+  `transaction_id` binary(16) NOT NULL,
   `filename` VARCHAR(100) NOT NULL,
   `jobname` VARCHAR(45) NULL,
   `cost` DECIMAL(6,2) NOT NULL,
@@ -246,13 +246,13 @@ insert into mydb.rental_tool (tool_id, name) VALUES
 (333, "drill");
 
 insert into mydb.transaction (transaction_id, group_id, net_id, date, type) values
-(1,  24, 'abc180002', '2021-02-13T08:34:09', 'rent'),
-(2,  24, 'abc180002', '2021-02-13T08:34:09', 'rent'),
-(3,  24, 'adf180004', '2021-02-14T04:00:00', 'rent'),
-(4, 357, 'bcd180003', '2021-02-18T04:03:03', 'rent'),
-(5, 357, 'bcd180003', '2021-02-18T06:04:04', 'rent'),
-(6, 357, 'bef180005', '2021-02-18T07:01:01', 'rent'),
-(7, 357, 'bgh180007', '2021-02-22T14:15:00', 'rent');
+(1,  24, 'abc180002', '2021-02-13T08:34:09', 'rental'),
+(2,  24, 'abc180002', '2021-02-13T08:34:09', 'rental'),
+(3,  24, 'adf180004', '2021-02-14T04:00:00', 'rental'),
+(4, 357, 'bcd180003', '2021-02-18T04:03:03', 'rental'),
+(5, 357, 'bcd180003', '2021-02-18T06:04:04', 'rental'),
+(6, 357, 'bef180005', '2021-02-18T07:01:01', 'rental'),
+(7, 357, 'bgh180007', '2021-02-22T14:15:00', 'rental');
 
 insert into mydb.rented_tool (transaction_id, tool_id, returned_date, notification_sent) values
 (1, 111, '2021-02-13T10:05:00', false),
@@ -262,24 +262,3 @@ insert into mydb.rented_tool (transaction_id, tool_id, returned_date, notificati
 (5, 333, '2021-02-18T08:00:00', false),
 (6, 222, '2021-02-19T07:00:00', false),
 (7, 222, null,                  false);
-
-
-
-
-
--- queries
--- set manual holds
--- update mydb.student set student_hold=true where net_id in (180004, 180007);
-
--- unreturned tools
--- select group_id, net_id, mydb.rental_tool.tool_id, mydb.rental_tool.name,  mydb.transaction.date as rental_start 
--- from mydb.transaction, mydb.rented_tool, mydb.rental_tool 
--- where mydb.transaction.transaction_id= mydb.rented_tool.transaction_id 
--- 	and mydb.rented_tool.tool_id = mydb.rental_tool.tool_id
--- 	and mydb.rented_tool.returned_date is null;
-
--- all students in group 357
--- select * from mydb.student
---where mydb.student.net_id
---	in (select net_id from mydb.group_has_student
---	where mydb.group_has_student.group_id = 357);
