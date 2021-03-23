@@ -17,6 +17,12 @@ router.get("/", (req, res) => {
 
     console.log(uuid.v1())
     console.log('The solution is: ', rows)
+
+    console.log("rows"+ rows.length)
+    for(var i=0;i< rows.length; i++){
+      rows[i].current_cost = parseFloat(rows[i].current_cost)
+      console.log("TYPE"+ typeof(rows[i].current_cost))
+    }
     res.json(rows);
   })
 
