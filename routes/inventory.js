@@ -18,10 +18,9 @@ router.get("/", (req, res) => {
     console.log(uuid.v1())
     console.log('The solution is: ', rows)
 
-    console.log("rows"+ rows.length)
+    //console.log("rows"+ rows.length)
     for(var i=0;i< rows.length; i++){
       rows[i].current_cost = parseFloat(rows[i].current_cost)
-      console.log("TYPE"+ typeof(rows[i].current_cost))
     }
     res.json(rows);
   })
@@ -141,7 +140,7 @@ router.post("/buy", (req, res) => {
 
     console.log("NUMQUERIES: " + queries.length);
 
-    const results = await Promise.all(queries);
+    const results = await Promise.all(queries).catch(() => { console.log("One of the queries failed to complete.") });;
 
     valid = []
     status = 200;
