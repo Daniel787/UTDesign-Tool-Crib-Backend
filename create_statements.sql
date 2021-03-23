@@ -220,25 +220,34 @@ SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 insert into mydb.inventory_part (part_id, name, quantity_available, current_cost) VALUES
 (12345, "phillips screw size X", 17, .01), -- 17 screws in stock, one penny (0.01 dollars) per screw
 (56789, "arduino micro without headers", 8, 12),  -- 8 arduinos in stock, 12 dollars per arduino
-(35791, "hot glue stick", 4, .50); -- 4 hot glue gun sticks in stock, 0.50 dollars per stick
+(35791, "hot glue stick", 5, .50); -- 4 hot glue gun sticks in stock, 0.50 dollars per stick
 
 insert into mydb.student (net_id, email, utd_id, student_hold) values
 ('abc180002', "002@utdallas", 2, false),
 ('adf180004', "004@utdallas", 4, true),
 ('bcd180003', "003@utdallas", 3, false),
 ('bef180005', "005@utdallas", 5, false),
-('bgh180007', "007@utdallas", 7, true);
+('bgh180007', "007@utdallas", 7, true),
+('axy190000', "000@utdallas", 0, false),
+('bxy190001', "001@utdallas", 1, false),
+('aaa155001', "15001@utdallas", 151, false);
 
 insert into mydb.groups (group_id, group_name, group_sponsor) VALUES
 (24, "epics group", "ntafos"),
-(357, "toolshed group", "robles");
+(357, "toolshed group", "robles"),
+(01, "electrical group", "bishop");
 
 insert into mydb.group_has_student (group_id, net_id) VALUES
 (24,  'abc180002'),
 (24,  'adf180004'),
 (357, 'bcd180003'),
 (357, 'bef180005'),
-(357, 'bgh180007');
+(357, 'bgh180007'),
+(01,  'axy190000'),
+(01,  'bxy190001'),
+(01,  'aaa155001'),
+(357,  'aaa155001');
+
 
 insert into mydb.rental_tool (tool_id, name) VALUES
 (111, "hammer"),
@@ -262,3 +271,24 @@ insert into mydb.rented_tool (transaction_id, tool_id, returned_date, notificati
 (5, 333, '2021-02-18T08:00:00', false),
 (6, 222, '2021-02-19T07:00:00', false),
 (7, 222, null,                  false);
+
+
+insert into mydb.transaction (transaction_id, group_id, net_id, date, type) values
+(76,   24, 'abc180002', '2021-02-02T02:02:02.002', 'purchase'),
+(77,  357, 'bef180005', '2021-03-10T06:00:00', 'purchase'),
+(78,  357, 'bgh180007', '2021-03-10T06:05:00', 'purchase'),
+(79,   24, 'adf180004', '2021-03-18T09:00:00', 'purchase'),
+(80,   24, 'adf180004', '2021-03-18T09:05:00', 'purchase'),
+(81,   01, 'bxy190001', '2021-03-22T15:00:00', 'purchase'),
+(82,   01, 'aaa155001', '2021-03-22T15:05:00', 'purchase'),
+(83,  357, 'aaa155001', '2021-03-22T15:10:00', 'purchase');
+
+insert into mydb.purchased_part (transaction_id, part_id, quantity_purchased, purchased_cost) values
+(76, 12345, 1, .01),
+(77, 56789, 2, 12),
+(78, 35791, 3, .5),
+(79, 12345, 1, .01),
+(80, 35791, 1, .5),
+(81, 12345, 7, .01),
+(82, 35791, 2, .5),
+(83, 56789, 1, 12);
