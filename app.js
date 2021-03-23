@@ -29,11 +29,14 @@ var inventoryRouter = require('./routes/inventory');
 var toolsRouter = require('./routes/tools');
 var studentRouter = require('./routes/student');
 var groupRouter = require('./routes/group');
+var expenseRouter = require('./routes/expense');
 app.use('/', rootRouter);
 app.use('/inventory', inventoryRouter);
 app.use('/tools', toolsRouter);
 app.use('/student', studentRouter);
 app.use('/group', groupRouter);
+app.use('/group', groupRouter);
+app.use('/expense', expenseRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
