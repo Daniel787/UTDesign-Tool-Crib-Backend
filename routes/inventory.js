@@ -174,7 +174,7 @@ router.post("/buy", (req, res) => {
 
       console.log("NUMQUERIES: " + queries.length);
 
-      const results = await Promise.all(queries);
+      const results = await Promise.all(queries).catch(() => { console.log("One of the queries failed to complete.") });;
 
       res.send("finished");
     }
