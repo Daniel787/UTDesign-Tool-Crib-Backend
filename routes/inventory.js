@@ -176,4 +176,152 @@ router.post("/buy", (req, res) => {
   })();
 });
 
+//note: the json used is actually wrong because of duplicate key, use this to rent two items:
+/*
+{
+    "customer": {
+        "net_id": "bcd180003",
+        "group_id": 357
+    },
+    "cart": [
+        {
+            "tool": {
+                "tool_id": 111
+            }
+        },
+        {
+            "tool": {
+                "tool_id": 222
+            }
+
+        }
+    ]
+}
+*/ 
+router.post("/rent", (req, res) => {
+  console.log("entered first rent route");
+
+  (async function sendquery(param) {
+    queries = []
+
+    const pool2 = pool.promise();
+
+    console.log("length"+ req.body.cart.length);
+    for (i = 0; i < req.body.cart.length; i++) {
+      //SELECT (current_cost = :purchased_cost) cost_matches, ((quantity_available - :quantity_purchased) >= 0) enough_stock "
+      //+ "FROM inventory_part WHERE part_id = :part_id;
+      var query = toUnnamed(
+        "SELECT transaction_id FROM rented_tool where (tool_id = :tool_id AND returned_date is NULL)",{
+        //"SELECT 1 from mydb.rented_tool where tool_id = :tool_id AND returned_date=NULL", {
+        tool_id: req.body.cart[i].tool.tool_id,
+      });
+
+      queries.push(pool2.query(query[0], query[1]));
+    }
+
+    //console.log("NUMQUERIES: " + queries.length);
+
+    const results = await Promise.all(queries);
+    //console.log("RESULTS:", results[0])
+
+    valid = []
+    status = 200;
+
+    results.forEach(([rows, fields]) => { if (rows.length != 0) status = 412; });
+    results.forEach(([rows, fields]) => { valid.push(rows[0]); console.log(rows[0]);});
+    console.log("VALID: "+ valid)
+
+    if (status != 200) {
+      res.status(status).send(valid);
+    }
+    //else transaction is valid, so insert the transaction row for the tool
+    else {
+      console.log("Entering part 2 of post route for tool");
+      queries = []
+
+      const pool2 = pool.promise();
+      for (i = 0; i < req.body.cart.length; i++) {
+        var query = toUnnamed("INSERT into mydb.transaction (transaction_id, group_id, net_id, date, type) VALUES "
+          + "(UUID_TO_BIN(:transaction_id), :group_id, :net_id, NOW(3), :type);"
+          + "INSERT into mydb.rented_tool (transaction_id, tool_id, returned_date, notification_sent) VALUES "
+          + "(UUID_TO_BIN(:transaction_id), :tool_id, NULL, 0)" , {
+          transaction_id: uuid.v1(),
+          group_id: req.body.customer.group_id,
+          net_id: req.body.customer.net_id,
+          type: "rental",
+          tool_id: req.body.cart[i].tool.tool_id,
+          notification_sent: "0"
+        });
+
+        queries.push(pool2.query(query[0], query[1]));
+      }
+
+      console.log("NUMQUERIES: " + queries.length);
+
+      const results = await Promise.all(queries);
+
+      res.send("finished");
+    }
+  })();
+});
+
+//we want the return date to be null here, unlike the above route
+//you can return multiple items at once
+router.post("/return", (req, res) => {
+  console.log("entered return rent route");
+
+  (async function sendquery(param) {
+    queries = []
+
+    const pool2 = pool.promise();
+
+    for (i = 0; i < req.body.cart.length; i++) {
+      //SELECT (current_cost = :purchased_cost) cost_matches, ((quantity_available - :quantity_purchased) >= 0) enough_stock "
+      //+ "FROM inventory_part WHERE part_id = :part_id;
+      var query = toUnnamed(
+        "SELECT transaction_id FROM rented_tool where (tool_id = :tool_id AND returned_date is NULL)",{
+        tool_id: req.body.cart[i].tool.tool_id
+      });
+
+      queries.push(pool2.query(query[0], query[1]));
+    }
+
+    //console.log("NUMQUERIES: " + queries.length);
+
+    const results = await Promise.all(queries);
+   
+
+    valid = []
+    status = 200;
+
+    results.forEach(([rows, fields]) => { if (rows.length != 1){ console.log(rows.length); status = 412;} });
+    results.forEach(([rows, fields]) => { valid.push(rows[0]); console.log(rows[0]);});
+    console.log("VALID: "+ valid)
+
+    if (status != 200) {
+      res.status(status).send(valid);
+    }
+    //else transaction is valid, so insert the transaction row for the tool
+    else {
+      console.log("That part is able to be returned...");
+      queries = []
+
+      const pool2 = pool.promise();
+     for (i = 0; i < req.body.cart.length; i++) {
+        var query = toUnnamed("UPDATE mydb.rented_tool SET returned_date = NOW(3) WHERE tool_id = :id AND returned_date is NULL" , {
+          id: req.body.cart[i].tool.tool_id
+        });
+
+        queries.push(pool2.query(query[0], query[1]));
+      }
+
+      console.log("NUMQUERIES: " + queries.length);
+
+      const results = await Promise.all(queries);
+
+      res.send("finished");
+    }
+  })();
+});
+
 module.exports = router;
