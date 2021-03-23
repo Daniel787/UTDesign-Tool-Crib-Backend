@@ -162,8 +162,8 @@ router.post("/buy", (req, res) => {
           + "(UUID_TO_BIN(:transaction_id), :part_id, :quantity_purchased, (SELECT current_cost FROM inventory_part WHERE part_id = :part_id));"
           + "UPDATE mydb.inventory_part SET quantity_available = (quantity_available - :quantity_purchased) WHERE part_id = :part_id", {
           transaction_id: uuid.v1(),
-          group_id: req.body.customer.group_id,
-          net_id: req.body.customer.net_id,
+          group_id: req.body.customer.groupID,
+          net_id: req.body.customer.netID,
           type: "purchase",
           part_id: req.body.cart[i].item.part_id,
           quantity_purchased: req.body.cart[i].quantity,
@@ -174,7 +174,12 @@ router.post("/buy", (req, res) => {
 
       console.log("NUMQUERIES: " + queries.length);
 
-      const results = await Promise.all(queries).catch(() => { console.log("One of the queries failed to complete.") });;
+      const results = await Promise.all(queries).catch(() => { console.log("One of the queries failed to complete 2.") });
+
+      /*
+      for(var i=0;i< rows.length; i++){
+        rows[i].current_cost = parseFloat(rows[i].current_cost)
+      }*/
 
       res.send("finished");
     }
