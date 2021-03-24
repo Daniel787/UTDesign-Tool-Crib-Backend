@@ -19,7 +19,7 @@ router.get("/", (req, res) => {
     console.log('The solution is: ', rows)
 
     //console.log("rows"+ rows.length)
-    for(var i=0;i< rows.length; i++){
+    for (var i = 0; i < rows.length; i++) {
       rows[i].current_cost = parseFloat(rows[i].current_cost)
     }
     res.json(rows);
@@ -66,8 +66,7 @@ router.get("/search", (req, res) => {
     res.json(rows);
   })
 
-  console.log('The solution is: ', rows)
-  res.json(rows);
+  console.log('finished route')
 });
 
 //i.e. http://localhost:3006/inventory/search?name=phil 
@@ -207,7 +206,7 @@ router.post("/buy", (req, res) => {
         }
     ]
 }
-*/ 
+*/
 router.post("/rent", (req, res) => {
   console.log("entered first rent route");
 
@@ -216,12 +215,12 @@ router.post("/rent", (req, res) => {
 
     const pool2 = pool.promise();
 
-    console.log("length"+ req.body.cart.length);
+    console.log("length" + req.body.cart.length);
     for (i = 0; i < req.body.cart.length; i++) {
       //SELECT (current_cost = :purchased_cost) cost_matches, ((quantity_available - :quantity_purchased) >= 0) enough_stock "
       //+ "FROM inventory_part WHERE part_id = :part_id;
       var query = toUnnamed(
-        "SELECT transaction_id FROM rented_tool where (tool_id = :tool_id AND returned_date is NULL)",{
+        "SELECT transaction_id FROM rented_tool where (tool_id = :tool_id AND returned_date is NULL)", {
         //"SELECT 1 from mydb.rented_tool where tool_id = :tool_id AND returned_date=NULL", {
         tool_id: req.body.cart[i].tool.tool_id,
       });
@@ -238,8 +237,8 @@ router.post("/rent", (req, res) => {
     status = 200;
 
     results.forEach(([rows, fields]) => { if (rows.length != 0) status = 412; });
-    results.forEach(([rows, fields]) => { valid.push(rows[0]); console.log(rows[0]);});
-    console.log("VALID: "+ valid)
+    results.forEach(([rows, fields]) => { valid.push(rows[0]); console.log(rows[0]); });
+    console.log("VALID: " + valid)
 
     if (status != 200) {
       res.status(status).send(valid);
@@ -254,7 +253,7 @@ router.post("/rent", (req, res) => {
         var query = toUnnamed("INSERT into mydb.transaction (transaction_id, group_id, net_id, date, type) VALUES "
           + "(UUID_TO_BIN(:transaction_id), :group_id, :net_id, NOW(3), :type);"
           + "INSERT into mydb.rented_tool (transaction_id, tool_id, returned_date, notification_sent) VALUES "
-          + "(UUID_TO_BIN(:transaction_id), :tool_id, NULL, 0)" , {
+          + "(UUID_TO_BIN(:transaction_id), :tool_id, NULL, 0)", {
           transaction_id: uuid.v1(),
           group_id: req.body.customer.group_id,
           net_id: req.body.customer.net_id,
@@ -289,7 +288,7 @@ router.post("/return", (req, res) => {
       //SELECT (current_cost = :purchased_cost) cost_matches, ((quantity_available - :quantity_purchased) >= 0) enough_stock "
       //+ "FROM inventory_part WHERE part_id = :part_id;
       var query = toUnnamed(
-        "SELECT transaction_id FROM rented_tool where (tool_id = :tool_id AND returned_date is NULL)",{
+        "SELECT transaction_id FROM rented_tool where (tool_id = :tool_id AND returned_date is NULL)", {
         tool_id: req.body.cart[i].tool.tool_id
       });
 
@@ -299,14 +298,14 @@ router.post("/return", (req, res) => {
     //console.log("NUMQUERIES: " + queries.length);
 
     const results = await Promise.all(queries);
-   
+
 
     valid = []
     status = 200;
 
-    results.forEach(([rows, fields]) => { if (rows.length != 1){ console.log(rows.length); status = 412;} });
-    results.forEach(([rows, fields]) => { valid.push(rows[0]); console.log(rows[0]);});
-    console.log("VALID: "+ valid)
+    results.forEach(([rows, fields]) => { if (rows.length != 1) { console.log(rows.length); status = 412; } });
+    results.forEach(([rows, fields]) => { valid.push(rows[0]); console.log(rows[0]); });
+    console.log("VALID: " + valid)
 
     if (status != 200) {
       res.status(status).send(valid);
@@ -317,8 +316,8 @@ router.post("/return", (req, res) => {
       queries = []
 
       const pool2 = pool.promise();
-     for (i = 0; i < req.body.cart.length; i++) {
-        var query = toUnnamed("UPDATE mydb.rented_tool SET returned_date = NOW(3) WHERE tool_id = :id AND returned_date is NULL" , {
+      for (i = 0; i < req.body.cart.length; i++) {
+        var query = toUnnamed("UPDATE mydb.rented_tool SET returned_date = NOW(3) WHERE tool_id = :id AND returned_date is NULL", {
           id: req.body.cart[i].tool.tool_id
         });
 
