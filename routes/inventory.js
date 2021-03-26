@@ -379,7 +379,7 @@ router.post("/rent", (req, res) => {
     //results.forEach(([rows, fields]) => { emailsdates.push([rows[0], datedue]) });
     
     //tool crib always closes at 10
-    if(datedue.getHours >= 22) { console.log("This rental time is shortened because the crib closes at 10"); datedue.setHours(21); datedue.setMinutes(50);}
+    if(datedue.getHours() >= 22) { console.log("This rental time is shortened because the crib closes at 10"); datedue.setHours(21); datedue.setMinutes(50);}
 
     emailsdates.push([email, datedue])
     console.log("EMAILSDATES: " + emailsdates[0][0] + emailsdates[0][1])
