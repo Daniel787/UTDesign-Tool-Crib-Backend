@@ -271,7 +271,7 @@ router.post("/rent", (req, res) => {
       //CHECK: does the student have a hold?
       var query = toUnnamed(
         "SELECT * FROM mydb.student WHERE student_hold = true AND net_id= :student_id",{
-        tool_id: req.body.cart[i].tool.tool_id,
+        tool_id: req.body.cart[i].item.tool_id,
         student_id: req.body.customer.netID
       });
 
@@ -298,7 +298,7 @@ router.post("/rent", (req, res) => {
       var query = toUnnamed(
         "SELECT transaction_id FROM rented_tool where (tool_id = :tool_id AND returned_date is NULL)",{
         //"SELECT 1 from mydb.rented_tool where tool_id = :tool_id AND returned_date=NULL", {
-        tool_id: req.body.cart[i].tool.tool_id,
+        tool_id: req.body.cart[i].item.tool_id,
       });
 
       queries.push(pool2.query(query[0], query[1]));
@@ -328,7 +328,7 @@ router.post("/rent", (req, res) => {
         group_id: req.body.customer.groupID,
         netID: req.body.customer.netID,
         type: "rental",
-        tool_id: req.body.cart[i].tool.tool_id,
+        tool_id: req.body.cart[i].item.tool_id,
         notification_sent: 0
       });
 
@@ -373,12 +373,13 @@ router.post("/rent", (req, res) => {
     var email='sudhi.jagadeeshi@gmail.com'
     var temp= new Date(Date.now())
     //datedue.setTime(datedue.getTime() + (2*60*60*1000)); //add two hours
-    var datedue= new Date(temp.getTime() + (4*60*60*1000)); //add 6 seconds
+    var datedue= new Date(temp.getTime() + (9*60*60*1000)); //add 6 seconds
     
     //when there are actual emails in the DB, uncomment
     //results.forEach(([rows, fields]) => { emailsdates.push([rows[0], datedue]) });
     
     //tool crib always closes at 10
+    //console.log("HOURS", datedue.getHours());
     if(datedue.getHours() >= 22) { console.log("This rental time is shortened because the crib closes at 10"); datedue.setHours(21); datedue.setMinutes(50);}
 
     emailsdates.push([email, datedue])
