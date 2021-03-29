@@ -35,7 +35,7 @@ router.get("/searchname", (req, res) => {
 
   myquery =
     "SELECT * FROM mydb.rental_tool WHERE LOWER(name) LIKE LOWER(CONCAT('%', ?, '%'))";
-  pool.query(myquery, function (err, rows, fields) {
+  connection.query(myquery, function (err, rows, fields) {
     if (err) throw err;
 
     console.log("The solution is: ", rows);
