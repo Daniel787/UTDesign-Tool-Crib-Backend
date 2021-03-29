@@ -61,7 +61,32 @@ router.get("/", (req, res) => {
   });
   
   
+  //i.e. http://localhost:port/inventory
+  router.post("/insert", (req, res) => {
+    (async function sendquery(param) {
+      queries = []
   
+      const pool2 = pool.promise();
+      console.log("length: ")
+      console.log(req.body.cart.length)
+      for (i = 0; i < req.body.cart.length; i++) {
+        var query = toUnnamed("INSERT into mydb.inventory_part VALUES(:tool_id, :name, :quantity_avilable, :current_cost)", {
+          tool_id: req.body.cart[i].item.part_id,
+          name: req.body.cart[i].item.name,
+          quantity_available: req.body.cart[i].item.quantity_available,
+          current_cost: req.body.cart[i].item.current_cost
+        });
+  
+        queries.push(pool2.query(query[0], query[1]));
+      }
+  
+      console.log("NUMQUERIES: " + queries.length);
+      var status=200;
+      const results = await Promise.all(queries).catch(() => { console.log("One of the tools failed to insert.");  status=412;});
+      return res.status(status).send("done with route");
+    })();
+  });
+
   //http://localhost:3500/inventory/buy
   /*
   {

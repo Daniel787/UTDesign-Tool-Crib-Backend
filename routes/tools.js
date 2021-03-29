@@ -132,9 +132,35 @@ job.start();
     ]
 }
 */
+
+//i.e. http://localhost:port/inventory
+router.post("/insert", (req, res) => {
+  console.log("IN HERE");
+  (async function sendquery(param) {
+    queries = []
+
+    const pool2 = pool.promise();
+    console.log("length: ")
+    console.log(req.body.cart.length)
+    for (i = 0; i < req.body.cart.length; i++) {
+      var query = toUnnamed("INSERT into mydb.rental_tool VALUES(:tool_id, :name)", {
+        tool_id: req.body.cart[i].item.tool_id,
+        name: req.body.cart[i].item.name
+      });
+
+      queries.push(pool2.query(query[0], query[1]));
+    }
+
+    console.log("NUMQUERIES: " + queries.length);
+    var status=200;
+    const results = await Promise.all(queries).catch(() => { console.log("One of the tools failed to insert.");  status=412;});
+    return res.status(status).send("done with route");
+  })();
+});
+
+
 router.post("/rent", (req, res) => {
   (async function sendquery(param) {
-    console.log("Part 1- check hold");
     queries = []
     const pool2 = pool.promise();
 
