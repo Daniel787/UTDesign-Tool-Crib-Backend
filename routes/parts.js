@@ -56,9 +56,26 @@ router.get("/", (req, res) => {
     })
   });
   
-  
-  //i.e. http://localhost:port/inventory
   router.post("/insert", (req, res) => {
+       console.log("O3")
+        var query = toUnnamed("INSERT into mydb.inventory_part VALUES(:tool_id, :name, :quantity_available, :current_cost)", {
+          tool_id: req.body.part_id,
+          name: req.body.name,
+          quantity_available: req.body.quantity_available,
+          current_cost: req.body.current_cost
+        });
+
+        pool.query(query[0],query[1], function (err, rows, fields) {
+          if (err) console.log(err)
+      
+          console.log('Response: ', rows)
+          res.send("finished");
+        })
+  
+  });
+
+  //i.e. http://localhost:port/inventory
+  router.post("/insertMultiple", (req, res) => {
     (async function sendquery(param) {
       queries = []
   

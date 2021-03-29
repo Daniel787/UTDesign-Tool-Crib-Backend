@@ -126,8 +126,23 @@ job.start();
 }
 */
 
-//i.e. http://localhost:port/inventory
 router.post("/insert", (req, res) => {
+  var query = toUnnamed("INSERT into mydb.rental_tool VALUES(:tool_id, :name)", {
+    tool_id: req.body.part_id,
+    name: req.body.name,
+  });
+
+  pool.query(query[0],query[1], function (err, rows, fields) {
+    if (err) console.log(err)
+
+    console.log('Response: ', rows)
+    res.send("finished");
+  })
+
+});
+
+//i.e. http://localhost:port/inventory
+router.post("/insertMultiple", (req, res) => {
   console.log("IN HERE");
   (async function sendquery(param) {
     queries = []
