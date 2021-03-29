@@ -8,7 +8,7 @@ const nodemon = require('nodemon');
 var app = express();
 
 app.listen(process.env.PORT || 3006, () => {
-  console.log('Go to http://localhost:'+(process.env.PORT || 3006)+'/inventory to see inventory');
+  console.log('Go to http://localhost:'+(process.env.PORT || 3006)+'/inventory/parts to see parts');
  });
 
 // view engine setup

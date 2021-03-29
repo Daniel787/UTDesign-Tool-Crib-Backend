@@ -58,7 +58,7 @@ var transporter = nodemailer.createTransport({
 });
 
 function sendmails() {
-  console.log(emailsdates.length)
+  console.log("sendmails(): emailsdates.length: " + emailsdates.length)
   for (var i = 0; i < emailsdates.length; i++) {
     if (emailsdates[i][1] <= Date.now()) {
       var email = String(emailsdates[i][0])
