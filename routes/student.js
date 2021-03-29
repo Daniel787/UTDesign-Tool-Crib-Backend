@@ -7,11 +7,9 @@ var pool = require('../db.js')
 router.get("/",(req,res) => {
   myquery= "SELECT * FROM mydb.student"
   pool.query(myquery, function (err, rows, fields) {
-    if (err) throw err
+    if (err) console.log(err)
     res.json(rows);
   })
-
-  console.log('finished route')
 });
 
 //i.e. http://localhost:port/student/search?net-id=180004
@@ -21,22 +19,18 @@ router.get("/search",(req,res) => {
 
   myquery= "SELECT * FROM mydb.student WHERE net_id=?"
   pool.query(myquery, [net_id], function (err, rows, fields) {
-    if (err) throw err
+    if (err) console.log(err)
     res.json(rows);
   })
-
-  console.log('finished route')
 });
 
 router.get("/holds",(req,res) => {
 
   myquery= "SELECT * FROM mydb.student WHERE student_hold = true"
   pool.query(myquery, function (err, rows, fields) {
-    if (err) throw err
+    if (err) console.log(err)
     res.json(rows);
   })
-
-  console.log('finished route')
 });
   
 router.get("/holds/detailed",(req,res) => {
@@ -47,11 +41,9 @@ router.get("/holds/detailed",(req,res) => {
       +"and mydb.rented_tool.tool_id = mydb.rental_tool.tool_id "
       +"and mydb.rented_tool.returned_date is null;"
   pool.query(myquery, function (err, rows, fields) {
-    if (err) throw err
+    if (err) console.log(err)
     res.json(rows);
   })
-
-  console.log('finished route')
 });
 
 module.exports = router;

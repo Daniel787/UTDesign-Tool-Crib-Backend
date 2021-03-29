@@ -1,11 +1,10 @@
 var createError = require('http-errors');
 var express = require('express');
-const bodyParser = require('body-parser');
-const mysql      = require('mysql');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const cors = require('cors') 
+const nodemon = require('nodemon');
 var app = express();
 
 app.listen(process.env.PORT || 3006, () => {
@@ -26,13 +25,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 //routers
 var rootRouter = require('./routes/root');
 var inventoryRouter = require('./routes/inventory');
-var toolsRouter = require('./routes/tools');
 var studentRouter = require('./routes/student');
 var groupRouter = require('./routes/group');
 var expenseRouter = require('./routes/expense');
 app.use('/', rootRouter);
 app.use('/inventory', inventoryRouter);
-app.use('/tools', toolsRouter);
 app.use('/student', studentRouter);
 app.use('/group', groupRouter);
 app.use('/group', groupRouter);

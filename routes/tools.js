@@ -1,5 +1,4 @@
 var express = require('express');
-const nodemon = require('nodemon');
 var router = express.Router();
 var toUnnamed = require('named-placeholders')();
 var uuid = require('uuid');
@@ -13,11 +12,9 @@ var pool = require("../db.js");
 router.get("/", (req, res) => {
   myquery = "SELECT * FROM mydb.rental_tool";
   pool.query(myquery, function (err, rows, fields) {
-    if (err) throw err;
+    if (err) console.log(err);
     res.json(rows);
   });
-
-  console.log("finished route");
 });
 
 //i.e. http://localhost:port/tools/search?id=111
@@ -27,11 +24,9 @@ router.get("/search", (req, res) => {
 
   myquery = "SELECT * FROM mydb.rental_tool WHERE tool_id=?";
   pool.query(myquery, [id], function (err, rows, fields) {
-    if (err) throw err;
+    if (err) console.log(err);
     res.json(rows);
   });
-
-  console.log("finished route");
 });
 
 //i.e. http://localhost:port/tools/searchname?name=ham
@@ -42,13 +37,11 @@ router.get("/searchname", (req, res) => {
   myquery =
     "SELECT * FROM mydb.rental_tool WHERE LOWER(name) LIKE LOWER('%" + name + "%')";
   pool.query(myquery, function (err, rows, fields) {
-    if (err) throw err;
+    if (err) console.log(err);
 
-    console.log("The solution is: ", rows);
+    console.log("Response: ", rows);
     res.json(rows);
   });
-
-  console.log("finished route");
 });
 
 
@@ -93,7 +86,7 @@ function sendmails() {
       });
 
       pool.query(query[0], query[1], function (err, rows, fields) {
-        if (err) throw err
+        if (err) console.log(err)
 
         console.log("Sent mail and updated hold");
       })
