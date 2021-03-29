@@ -2,11 +2,11 @@ var express = require("express");
 var router = express.Router();
 
 //sql connection
-var connection = require("../db.js");
+var pool = require("../db.js");
 
 router.get("/", (req, res) => {
   myquery = "SELECT * FROM mydb.rental_tool";
-  connection.query(myquery, function (err, rows, fields) {
+  pool.query(myquery, function (err, rows, fields) {
     if (err) throw err;
     res.json(rows);
   });
@@ -20,7 +20,7 @@ router.get("/search", (req, res) => {
   var id = req.query.id;
 
   myquery = "SELECT * FROM mydb.rental_tool WHERE tool_id=?";
-  connection.query(myquery, [id], function (err, rows, fields) {
+  pool.query(myquery, [id], function (err, rows, fields) {
     if (err) throw err;
     res.json(rows);
   });
@@ -35,7 +35,7 @@ router.get("/searchname", (req, res) => {
 
   myquery =
     "SELECT * FROM mydb.rental_tool WHERE LOWER(name) LIKE LOWER('%" + name + "%')";
-  connection.query(myquery, function (err, rows, fields) {
+  pool.query(myquery, function (err, rows, fields) {
     if (err) throw err;
 
     console.log("The solution is: ", rows);
