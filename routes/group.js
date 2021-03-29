@@ -8,11 +8,9 @@ router.get("/",(req,res) => {
 
    myquery= "SELECT * FROM mydb.groups"
     pool.query(myquery, function (err, rows, fields) {
-      if (err) throw err
+      if (err) console.log(err)
       res.json(rows);
     })
-
-    console.log('finished route')
 });
 
 //i.e. http://localhost:port/group/search?id=357
@@ -22,11 +20,9 @@ router.get("/search",(req,res) => {
 
    myquery= "SELECT * FROM mydb.groups WHERE group_id=?" 
     pool.query(myquery, [id], function (err, rows, fields) {
-      if (err) throw err
+      if (err) console.log(err)
       res.json(rows);
     })
-
-    console.log('finished route')
 });
 
 //i.e. http://localhost:port/group/searchname?name =TeamName
@@ -36,11 +32,9 @@ router.get("/searchname",(req,res) => {
 
   myquery= "SELECT * FROM mydb.groups WHERE LOWER(group_name) LIKE LOWER(CONCAT('%', ?, '%'))"
   pool.query(myquery, [name], function (err, rows, fields) {
-    if (err) throw err
+    if (err) console.log(err)
     res.json(rows);
   })
-
-  console.log('finished route')
 });
 
 module.exports = router;

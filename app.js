@@ -1,11 +1,10 @@
 var createError = require('http-errors');
 var express = require('express');
-const bodyParser = require('body-parser');
-const mysql      = require('mysql');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const cors = require('cors') 
+const nodemon = require('nodemon');
 var app = express();
 
 app.listen(process.env.PORT || 3006, () => {

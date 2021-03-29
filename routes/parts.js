@@ -4,8 +4,6 @@ var router = express.Router();
 var toUnnamed = require('named-placeholders')();
 var uuid = require('uuid');
 var csv = require('express-csv');
-var CronJob = require('cron').CronJob
-var nodemailer = require('nodemailer')
 
 //sql connection
 var pool = require("../db.js");
@@ -16,10 +14,10 @@ router.get("/", (req, res) => {
 
     myquery = "SELECT * FROM mydb.inventory_part"
     pool.query(myquery, function (err, rows, fields) {
-      if (err) throw err
+      if (err) console.log(err)
   
       console.log(uuid.v1())
-      console.log('The solution is: ', rows)
+      console.log('Response: \n', rows)
   
       //console.log("rows"+ rows.length)
       for (var i = 0; i < rows.length; i++) {
@@ -27,8 +25,6 @@ router.get("/", (req, res) => {
       }
       res.json(rows);
     })
-  
-    console.log('finished route')
   });
   
   //i.e. http://localhost:port/inventory/search?id=12345
@@ -38,9 +34,9 @@ router.get("/", (req, res) => {
   
     myquery = "SELECT * FROM mydb.inventory_part WHERE part_id=?"
     pool.query(myquery, [id], function (err, rows, fields) {
-      if (err) throw err
+      if (err) console.log(err)
   
-      console.log('The solution is: ', rows)
+      console.log('Response: ', rows)
       res.json(rows);
     })
   });
@@ -53,9 +49,9 @@ router.get("/", (req, res) => {
   
     myquery = "SELECT * FROM mydb.inventory_part WHERE LOWER(name) LIKE LOWER('%" + name + "%')"
     pool.query(myquery, function (err, rows, fields) {
-      if (err) throw err
+      if (err) console.log(err)
   
-      console.log('The solution is: ', rows)
+      console.log('Response: ', rows)
       res.json(rows);
     })
   });

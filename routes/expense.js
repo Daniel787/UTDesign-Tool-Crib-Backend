@@ -1,7 +1,5 @@
 var express = require('express');
 var router = express.Router();
-var toUnnamed = require('named-placeholders')();
-var csv = require('express-csv');
 
 //sql connection
 var pool = require('../db.js')
@@ -35,7 +33,7 @@ router.get("/simple", (req, res) => {
   +"ORDER BY t.group_id;"
 
   pool.query(myquery, [""+year+month+"01", ""+year+month+"01"], function (err, rows, fields) {
-    if (err) throw err
+    if (err) console.log(err)
 
     //csv file name
     res.attachment(""+year+"-"+month+"_simple_report.csv");
@@ -92,7 +90,7 @@ router.get("/medium", (req, res) => {
   +"ORDER BY gt.group_id, st.net_id; "
 
   pool.query(myquery, [""+year+month+"01", ""+year+month+"01", ""+year+month+"01", ""+year+month+"01"], function (err, rows, fields) {
-    if (err) throw err
+    if (err) console.log(err)
 
     //csv file name
     res.attachment(""+year+"-"+month+"_simple_report.csv");
@@ -161,7 +159,7 @@ router.get("/full", (req, res) => {
   +"ORDER BY gs.group_id, gs.net_id, li.part_id; "
 
   pool.query(myquery, [""+year+month+"01", ""+year+month+"01", ""+year+month+"01", ""+year+month+"01", ""+year+month+"01", ""+year+month+"01"], function (err, rows, fields) {
-    if (err) throw err
+    if (err) console.log(err)
 
     //csv file name
     res.attachment(""+year+"-"+month+"_simple_report.csv");
