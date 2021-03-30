@@ -133,12 +133,11 @@ router.post("/insertMultiple", (req, res) => {
 }
 */
 router.post("/buy", (req, res) => {
-    console.log("entered first route");
-
     (async function sendquery(param) {
         queries = []
 
-        console.log("d2");
+        //NEED TO CHECK AND MAKE ERRORS FOR (net_id, group_id) pair existing in DB
+
         for (i = 0; i < req.body.cart.length; i++) {
             var query = toUnnamed(
                 "SELECT part_id, (current_cost = :purchased_cost) cost_matches, ((quantity_available - :quantity_purchased) >= 0) enough_stock "
@@ -150,8 +149,6 @@ router.post("/buy", (req, res) => {
 
             queries.push(pool2.query(query[0], query[1]));
         }
-
-        console.log("NUMQUERIES: " + queries.length);
 
         var results = await Promise.all(queries).catch(() => { console.log("One of the queries failed to complete.") });;
 
