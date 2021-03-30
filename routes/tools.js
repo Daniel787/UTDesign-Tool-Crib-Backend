@@ -2,22 +2,46 @@ var express = require('express');
 var router = express.Router();
 var toUnnamed = require('named-placeholders')();
 var uuid = require('uuid');
-var csv = require('express-csv');
 var CronJob = require('cron').CronJob
 var nodemailer = require('nodemailer')
 
 //sql connection
 var pool = require("../db.js");
 
+//i.e. http://localhost:port/inventory/tools
 router.get("/", (req, res) => {
-  myquery = "SELECT * FROM mydb.rental_tool";
+  myquery =
+    "SELECT * FROM mydb.rental_tool "
+    + "natural join "
+    + "( "
+    + "	SELECT rtr.tool_id, 'Rented' status "
+    + "	FROM mydb.transaction t , mydb.rented_tool rtr "
+    + "	WHERE (t.transaction_id = rtr.transaction_id) "
+    + "		AND (rtr.returned_date IS NULL) "
+    + "		AND NOW() <= (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) "
+    + "	UNION "
+    + "	SELECT rto.tool_id, 'Overdue' status "
+    + "	FROM mydb.transaction t , mydb.rented_tool rto "
+    + "	WHERE (t.transaction_id = rto.transaction_id) "
+    + "		AND (rto.returned_date IS NULL)  "
+    + "		AND NOW() > (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3)))  "
+    + "	UNION "
+    + "	SELECT rta.tool_id, 'Available' status  "
+    + "	FROM mydb.rental_tool rta "
+    + "	WHERE rta.tool_id  "
+    + "		NOT IN (SELECT rt.tool_id "
+    + "			FROM mydb.transaction t, mydb.rented_tool rt "
+    + "			WHERE (t.transaction_id = rt.transaction_id) "
+    + "				AND(rt.returned_date IS NULL) "
+    + "			ORDER BY REVERSE (t.date)) "
+    + ") u;"
   pool.query(myquery, function (err, rows, fields) {
     if (err) console.log(err);
     res.json(rows);
   });
 });
 
-//i.e. http://localhost:port/tools/search?id=111
+//i.e. http://localhost:port/inventory/tools/search?id=111
 router.get("/search", (req, res) => {
   //arguments
   var id = req.query.id;
@@ -29,7 +53,7 @@ router.get("/search", (req, res) => {
   });
 });
 
-//i.e. http://localhost:port/tools/searchname?name=ham
+//i.e. http://localhost:port/inventory/tools/searchname?name=ham
 router.get("/searchname", (req, res) => {
   //arguments
   var name = req.query.name;
@@ -132,7 +156,7 @@ router.post("/insert", (req, res) => {
     name: req.body.name,
   });
 
-  pool.query(query[0],query[1], function (err, rows, fields) {
+  pool.query(query[0], query[1], function (err, rows, fields) {
     if (err) console.log(err)
 
     console.log('Response: ', rows)
@@ -160,8 +184,8 @@ router.post("/insertMultiple", (req, res) => {
     }
 
     console.log("NUMQUERIES: " + queries.length);
-    var status=200;
-    const results = await Promise.all(queries).catch(() => { console.log("One of the tools failed to insert.");  status=412;});
+    var status = 200;
+    const results = await Promise.all(queries).catch(() => { console.log("One of the tools failed to insert."); status = 412; });
     return res.status(status).send("done with route");
   })();
 });
@@ -297,7 +321,7 @@ router.post("/rent", (req, res) => {
 
 //we want the return date to be null here, unlike the above route
 //you can return multiple items at once
-//i.e. http://localhost:port/inventory/return?id=111
+//i.e. http://localhost:port/inventory/tools/return?id=111
 router.post("/return", (req, res) => {
   console.log("entered return rent route");
   var id = req.query.id;
