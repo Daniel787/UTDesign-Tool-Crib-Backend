@@ -57,22 +57,29 @@ router.get("/searchname", (req, res) => {
 });
 
 router.post("/insert", (req, res) => {
-    console.log("O3")
-    var query = toUnnamed("INSERT into mydb.inventory_part VALUES(:tool_id, :name, :quantity_available, :current_cost)", {
-        tool_id: req.body.part_id,
+    var query = toUnnamed("INSERT into mydb.inventory_part VALUES(:part_id, :name, :quantity_available, :current_cost)", {
+        part_id: req.body.part_id,
         name: req.body.name,
         quantity_available: req.body.quantity_available,
         current_cost: req.body.current_cost
     });
 
+    if (req.body.req.body.quantity_available < 0) {
+        res.status(400).send('NEGATIVE_QUANTITY')
+    }
+    if (req.body.current_cost < 0) {
+        res.status(400).send('NEGATIVE_COST')
+    }
+
     pool.query(query[0], query[1], function (err, rows, fields) {
-        if (err) console.log(err)
-
-        console.log('Response: ', rows)
-        res.send("finished");
+        if (err) {
+            console.log(err)
+            res.status(400).send(err.code)
+        }
+        res.send();
     })
-
 });
+
 
 //i.e. http://localhost:port/inventory
 router.post("/insertMultiple", (req, res) => {
