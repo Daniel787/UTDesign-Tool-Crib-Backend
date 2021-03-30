@@ -8,9 +8,6 @@ var nodemailer = require('nodemailer')
 //sql connection
 var pool = require("../db.js");
 
-//default success status
-status = 200
-
 //i.e. http://localhost:port/inventory/tools
 router.get("/", (req, res) => {
   myquery =
@@ -134,7 +131,7 @@ job.start();
 /*
 {
     "customer": {
-        "netID": "bcd180003",
+        "net_id": "bcd180003",
         "group_id": 357
     },
     "cart": [
@@ -204,7 +201,7 @@ router.post("/rent", (req, res) => {
       var query = toUnnamed(
         "SELECT * FROM mydb.student WHERE student_hold = true AND net_id= :student_id", {
         tool_id: req.body.cart[i].item.tool_id,
-        student_id: req.body.customer.netID
+        student_id: req.body.customer.net_id
       });
 
       queries.push(pool2.query(query[0], query[1]));
@@ -212,8 +209,6 @@ router.post("/rent", (req, res) => {
 
     //console.log("NUMQUERIES: " + queries.length);
     var results = await Promise.all(queries);
-    valid = []
-    status = 200;
 
     results.forEach(([rows, fields]) => { if (rows.length == 1) { console.log("That student has a hold"); console.log(rows.length); status = 412; } });
     results.forEach(([rows, fields]) => { valid.push(rows[0]); console.log(rows[0]); });
@@ -221,6 +216,7 @@ router.post("/rent", (req, res) => {
     if (status != 200) {
       return res.status(status).send(valid);
     }
+
     console.log("The student does not have a hold")
     queries = []
     //console.log("length"+ req.body.cart.length);
@@ -253,12 +249,12 @@ router.post("/rent", (req, res) => {
 
     for (i = 0; i < req.body.cart.length; i++) {
       var query = toUnnamed("INSERT into mydb.transaction (transaction_id, group_id, net_id, date, type) VALUES "
-        + "(UUID_TO_BIN(:transaction_id), :group_id, :netID, NOW(3), :type);"
+        + "(UUID_TO_BIN(:transaction_id), :group_id, :net_id, NOW(3), :type);"
         + "INSERT into mydb.rented_tool (transaction_id, tool_id, returned_date, notification_sent) VALUES "
         + "(UUID_TO_BIN(:transaction_id), :tool_id, NULL, :notification_sent)", {
         transaction_id: uuid.v1(),
-        group_id: req.body.customer.groupID,
-        netID: req.body.customer.netID,
+        group_id: req.body.customer.group_id,
+        net_id: req.body.customer.net_id,
         type: "rental",
         tool_id: req.body.cart[i].item.tool_id,
         notification_sent: 0
@@ -288,8 +284,8 @@ router.post("/rent", (req, res) => {
 
     console.log("Part 4- Push email to emailsdates")
     //Add: push the email of the student and the date +2hrs to emailsdates
-    var query = toUnnamed("SELECT email FROM mydb.Student WHERE net_id=:netID ", {
-      netID: req.body.customer.netID
+    var query = toUnnamed("SELECT email FROM mydb.Student WHERE net_id=:net_id ", {
+      net_id: req.body.customer.net_id
     });
     queries.push(pool2.query(query[0], query[1]));
     results = await Promise.all(queries);

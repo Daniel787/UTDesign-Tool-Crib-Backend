@@ -1,5 +1,5 @@
 var express = require('express');
-const nodemon = require('nodemon');
+var nodemon = require('nodemon');
 var router = express.Router();
 var toUnnamed = require('named-placeholders')();
 var uuid = require('uuid');
@@ -7,9 +7,7 @@ var csv = require('express-csv');
 
 //sql connection
 var pool = require("../db.js");
-
-//default success status
-status = 200
+var pool2 = pool.promise();
 
 //i.e. http://localhost:port/inventory/parts
 router.get("/", (req, res) => {
@@ -86,7 +84,6 @@ router.post("/insertMultiple", (req, res) => {
     (async function sendquery(param) {
         queries = []
 
-        const pool2 = pool.promise();
         console.log("length: ")
         console.log(req.body.cart.length)
         for (i = 0; i < req.body.cart.length; i++) {
@@ -102,7 +99,7 @@ router.post("/insertMultiple", (req, res) => {
 
         console.log("NUMQUERIES: " + queries.length);
         var status = 200;
-        const results = await Promise.all(queries).catch(() => { console.log("One of the tools failed to insert."); status = 412; });
+        var results = await Promise.all(queries).catch(() => { console.log("One of the tools failed to insert."); status = 412; });
         return res.status(status).send("done with route");
     })();
 });
@@ -111,7 +108,7 @@ router.post("/insertMultiple", (req, res) => {
 /*
 {
   "customer": {
-  "netID": "bcd180003",
+  "net_id": "bcd180003",
   "group_id": 357
   },
   
@@ -141,12 +138,10 @@ router.post("/buy", (req, res) => {
     (async function sendquery(param) {
         queries = []
 
-        const pool2 = pool.promise();
-
         console.log("d2");
         for (i = 0; i < req.body.cart.length; i++) {
             var query = toUnnamed(
-                "SELECT (current_cost = :purchased_cost) cost_matches, ((quantity_available - :quantity_purchased) >= 0) enough_stock "
+                "SELECT part_id, (current_cost = :purchased_cost) cost_matches, ((quantity_available - :quantity_purchased) >= 0) enough_stock "
                 + "FROM inventory_part WHERE part_id = :part_id;", {
                 part_id: req.body.cart[i].item.part_id,
                 purchased_cost: req.body.cart[i].item.current_cost,
@@ -158,49 +153,41 @@ router.post("/buy", (req, res) => {
 
         console.log("NUMQUERIES: " + queries.length);
 
-        const results = await Promise.all(queries).catch(() => { console.log("One of the queries failed to complete.") });;
+        var results = await Promise.all(queries).catch(() => { console.log("One of the queries failed to complete.") });;
 
         valid = []
-        status = 200;
-
-        results.forEach(([rows, fields]) => { valid.push(rows[0]); if (rows[0].cost_matches == 0 || rows[0].enough_stock == 0) status = 412; });
+        status = 200
+        results.forEach(([rows, fields]) => {
+            valid.push(rows[0]);
+            if (rows[0].cost_matches == 0 || rows[0].enough_stock == 0) {status = 400;}
+        });
 
         if (status != 200) {
-            res.status(status).send(valid);
+            res.status(status).send(valid)
         }
-        //else transaction is valid, so insert the transaction row and update the part quantities
-        else {
-            queries = []
 
-            const pool2 = pool.promise();
-            for (i = 0; i < req.body.cart.length; i++) {
-                var query = toUnnamed("INSERT into mydb.transaction (transaction_id, group_id, net_id, date, type) values "
-                    + "(UUID_TO_BIN(:transaction_id), :group_id, :netID, NOW(3), :type);"
-                    + "INSERT into mydb.purchased_part (transaction_id, part_id, quantity_purchased, purchased_cost) VALUES "
-                    + "(UUID_TO_BIN(:transaction_id), :part_id, :quantity_purchased, (SELECT current_cost FROM inventory_part WHERE part_id = :part_id));"
-                    + "UPDATE mydb.inventory_part SET quantity_available = (quantity_available - :quantity_purchased) WHERE part_id = :part_id", {
-                    transaction_id: uuid.v1(),
-                    group_id: req.body.customer.groupID,
-                    netID: req.body.customer.netID,
-                    type: "purchase",
-                    part_id: req.body.cart[i].item.part_id,
-                    quantity_purchased: req.body.cart[i].quantity,
-                });
-
-                queries.push(pool2.query(query[0], query[1]));
-            }
-
-            console.log("NUMQUERIES: " + queries.length);
-
-            const results = await Promise.all(queries).catch(() => { console.log("One of the queries failed to complete 2.") });
-
-            /*
-            for(var i=0;i< rows.length; i++){
-              rows[i].current_cost = parseFloat(rows[i].current_cost)
-            }*/
-
-            res.send("finished");
+        //transaction is valid, so insert the transaction row and update the part quantities
+        queries = []
+        for (i = 0; i < req.body.cart.length; i++) {
+            var query = toUnnamed("INSERT into mydb.transaction (transaction_id, group_id, net_id, date, type) values "
+                + "(UUID_TO_BIN(:transaction_id), :group_id, :net_id, NOW(3), :type);"
+                + "INSERT into mydb.purchased_part (transaction_id, part_id, quantity_purchased, purchased_cost) VALUES "
+                + "(UUID_TO_BIN(:transaction_id), :part_id, :quantity_purchased, (SELECT current_cost FROM inventory_part WHERE part_id = :part_id));"
+                + "UPDATE mydb.inventory_part SET quantity_available = (quantity_available - :quantity_purchased) WHERE part_id = :part_id", {
+                transaction_id: uuid.v1(),
+                group_id: req.body.customer.group_id,
+                net_id: req.body.customer.net_id,
+                type: "purchase",
+                part_id: req.body.cart[i].item.part_id,
+                quantity_purchased: req.body.cart[i].quantity,
+            });
+            queries.push(pool2.query(query[0], query[1]));
         }
+        var results = await Promise.all(queries).catch((error) => { 
+            console.log(error);
+            res.status(500).send(error.code);
+        });
+        res.send();
     })();
 });
 
