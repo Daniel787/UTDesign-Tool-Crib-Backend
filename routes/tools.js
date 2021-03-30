@@ -8,6 +8,9 @@ var nodemailer = require('nodemailer')
 //sql connection
 var pool = require("../db.js");
 
+//default success status
+status = 200
+
 //i.e. http://localhost:port/inventory/tools
 router.get("/", (req, res) => {
   myquery =
@@ -152,17 +155,17 @@ job.start();
 
 router.post("/insert", (req, res) => {
   var query = toUnnamed("INSERT into mydb.rental_tool VALUES(:tool_id, :name)", {
-    tool_id: req.body.part_id,
+    tool_id: req.body.tool_id,
     name: req.body.name,
   });
 
   pool.query(query[0], query[1], function (err, rows, fields) {
-    if (err) console.log(err)
-
-    console.log('Response: ', rows)
-    res.send("finished");
+    if (err) {
+      console.log(err)
+      res.status(400).send(err.code)
+    }
+    res.send();
   })
-
 });
 
 //i.e. http://localhost:port/inventory
