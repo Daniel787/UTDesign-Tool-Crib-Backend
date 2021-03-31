@@ -134,6 +134,37 @@ Success Response : Status `200`
 Failure Response : Status `400` Bad Request and errcode in response:
 * 'ER\_DUP\_ENTRY' when tool_id is not unique
 
+### Rent a cart of tools
+`POST`, /inventory/tools/rent/
+
+Request: JSON:
+```
+{
+  "customer": {
+  "net_id": {STRING},
+  "group_id": {INT}
+  },
+  
+  "cart": 
+  [
+    {
+      "item": {
+        "tool_id": {INT},
+        "tool_name": {STRING}
+      }
+    },...
+  ]
+}
+```
+Success Response : Status `200`
+Failure Response : Status `400` Bad Request and errcode in response:
+* 'STUDENT_HOLD' when the student renting has a hold
+* 'PART_ALREADY_OUT' when the tool is rented out already
+* 'UNKNOWN_RENTAL_ERROR' when some error prevents the rental
+* 'NO_EMAIL' when the student's email is NULL
+
+or Status `500` Internal Server Error and errcode in response
+
 
 
 

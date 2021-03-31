@@ -214,7 +214,7 @@ router.post("/rent", (req, res) => {
     results.forEach(([rows, fields]) => { valid.push(rows[0]); console.log(rows[0]); });
 
     if (status != 200) {
-      return res.status(status).send(valid);
+      return res.status(400).send('STUDENT_HOLD');
     }
 
     console.log("The student does not have a hold")
@@ -241,7 +241,7 @@ router.post("/rent", (req, res) => {
     results.forEach(([rows, fields]) => { valid.push(rows[0]); console.log(rows[0]); });
 
     if (status != 200) {
-      return res.status(status).send(valid);
+      return res.status(400).send('PART_ALREADY_OUT');
     }
 
     console.log("Part 3- Place the rental");
@@ -278,7 +278,7 @@ router.post("/rent", (req, res) => {
     //console.log("VALID: "+ valid)
 
     if (status != 200) {
-      return res.status(status).send(valid);
+      return res.status(400).send('UNKNOWN_RENTAL_ERROR');
     }
 
 
@@ -295,7 +295,7 @@ router.post("/rent", (req, res) => {
 
     results.forEach(([rows, fields]) => { if (rows.length == 0) { console.log("We couldn't retrieve a mail"); status = 412; } });
     if (status != 200) {
-      return res.status(status).send(valid);
+      return res.status(400).send('NO_EMAIL');
     }
 
     var email = 'sudhi.jagadeeshi@gmail.com'
