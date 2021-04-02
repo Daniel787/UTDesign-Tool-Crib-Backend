@@ -19,6 +19,7 @@ USE `mydb` ;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `mydb`.`Student` (
   `net_id` VARCHAR(16) NOT NULL,
+  `name` VARCHAR(60) NOT NULL,
   `email` VARCHAR(45) NOT NULL,
   `utd_id` INT NULL,
   `student_hold` TINYINT NULL,
@@ -222,15 +223,15 @@ insert into mydb.inventory_part (part_id, name, quantity_available, current_cost
 (56789, "arduino micro without headers", 8, 12),  -- 8 arduinos in stock, 12 dollars per arduino
 (35791, "hot glue stick", 5, .50); -- 4 hot glue gun sticks in stock, 0.50 dollars per stick
 
-insert into mydb.student (net_id, email, utd_id, student_hold) values
-('abc180002', "002@utdallas", 2, false),
-('adf180004', "004@utdallas", 4, true),
-('bcd180003', "003@utdallas", 3, false),
-('bef180005', "005@utdallas", 5, false),
-('bgh180007', "007@utdallas", 7, true),
-('axy190000', "000@utdallas", 0, false),
-('bxy190001', "001@utdallas", 1, false),
-('aaa155001', "15001@utdallas", 151, false);
+insert into mydb.student (net_id, name, email, utd_id, student_hold) values
+('abc180002', "Fake Name1", "002@utdallas", 2, false),
+('adf180004', "Fake Name2", "004@utdallas", 4, true),
+('bcd180003', "Fake Name3", "003@utdallas", 3, false),
+('bef180005', "Fake Name4", "005@utdallas", 5, false),
+('bgh180007', "Fake Name5", "007@utdallas", 7, true),
+('axy190000', "Fake Name6", "000@utdallas", 0, false),
+('bxy190001', "Fake Name7", "001@utdallas", 1, false),
+('aaa155001', "Fake Name8", "15001@utdallas", 151, false);
 
 insert into mydb.groups (group_id, group_name, group_sponsor) VALUES
 (24, "epics group", "ntafos"),
