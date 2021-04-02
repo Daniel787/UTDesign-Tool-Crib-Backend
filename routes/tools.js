@@ -96,6 +96,7 @@ router.get("/searchname", (req, res) => {
 
 router.post("/modify", (req, res) => {
   (async function sendquery(param) {
+      var pool2= pool.promise();
       queries = []
 
       var query = toUnnamed("SELECT * FROM mydb.rental_tool WHERE tool_id = :tool_id", {
@@ -113,11 +114,17 @@ router.post("/modify", (req, res) => {
       }
 
       console.log("down here")
-      var query = toUnnamed("UPDATE mydb.rental_tool SET name= :name WHERE part_id= :part_id", {
-          part_id: req.body.part_id,
+      queries = []
+      var query = toUnnamed("UPDATE mydb.rental_tool SET name= :name WHERE tool_id= :tool_id", {
+          tool_id: req.body.tool_id,
           name: req.body.name,
       });
 
+      queries.push(pool2.query(query[0], query[1]));
+
+      var status = 200;
+      var results = await Promise.all(queries);
+      res.send("done with route")
   })();
 });
 

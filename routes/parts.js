@@ -126,6 +126,7 @@ router.post("/modify", (req, res) => {
             return res.status(status).send("INVALID_ID");
         }
 
+        queries = []
         console.log("down here")
         var query = toUnnamed("UPDATE mydb.inventory_part SET name= :name, quantity_available= :quantity_available, current_cost= :current_cost WHERE part_id= :part_id", {
             part_id: req.body.part_id,
@@ -133,6 +134,10 @@ router.post("/modify", (req, res) => {
             quantity_available: req.body.new_quantity,
             current_cost: req.body.new_cost
         });
+        queries.push(pool2.query(query[0], query[1]));
+        status = 200;
+        var results2 = await Promise.all(queries);
+        res.send("done with route")
 
     })();
 });
