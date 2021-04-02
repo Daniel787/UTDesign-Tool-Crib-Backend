@@ -62,7 +62,7 @@ router.post("/insert", (req, res) => {
         current_cost: req.body.current_cost
     });
 
-    if (req.body.req.body.quantity_available < 0) {
+    if (req.body.quantity_available < 0) {
         res.status(400).send('NEGATIVE_QUANTITY')
     }
     if (req.body.current_cost < 0) {
@@ -103,6 +103,40 @@ router.post("/insertMultiple", (req, res) => {
         return res.status(status).send("done with route");
     })();
 });
+
+//i.e. http://localhost:port/inventory/parts/modify
+router.post("/modify", (req, res) => {
+    (async function sendquery(param) {
+        queries = []
+
+        var query = toUnnamed("SELECT * FROM mydb.inventory_part WHERE part_id = :part_id", {
+            part_id: req.body.part_id,
+            name: req.body.name,
+            quantity_available: req.body.new_quantity,
+            current_cost: req.body.new_cost
+        });
+
+        queries.push(pool2.query(query[0], query[1]));
+
+        var status = 200;
+        var results = await Promise.all(queries);
+        console.log("done with queries")
+        results.forEach(([rows, fields]) => { if(rows.length ==0 ) {console.log("No part with that ID"); status = 412;} });
+        if(status == 412){
+            return res.status(status).send("INVALID_ID");
+        }
+
+        console.log("down here")
+        var query = toUnnamed("UPDATE mydb.inventory_part SET name= :name, quantity_available= :quantity_available, current_cost= :current_cost WHERE part_id= :part_id", {
+            part_id: req.body.part_id,
+            name: req.body.name,
+            quantity_available: req.body.new_quantity,
+            current_cost: req.body.new_cost
+        });
+
+    })();
+});
+
 
 //http://localhost:3500/inventory/buy
 /*
@@ -187,5 +221,70 @@ router.post("/buy", (req, res) => {
         res.send();
     })();
 });
+
+
+
+router.post("/upload", (req, res) => {
+
+    // File path.
+    readXlsxFile('ExamplePartsFile.xlsx').then((rows) => {
+      // `rows` is an array of rows
+      // each row being an array of cells.
+      //console.log(rows);
+    
+      var i,j;
+      var status=200;
+    
+      for(i=1; i< rows.length; i++){
+  
+        //these are at fixed positions
+        var group_id= rows[i][0];
+        var group_name= rows[i][3];
+        var sponsor= rows[i][4];
+  
+        for(j=6; j<24; j++){
+          //get name, email, id
+          var name= rows[i][j]
+          j++;
+          var id= rows[i][j]
+          j++;
+          var email= rows[i][j]
+  
+          console.log("name: " + name+"    email: " + email+"     id: " + id)
+          //this check fails, but it isn't technically necessary, the insert will just fail
+          if(name == null || email == null || id == null){
+            console.log("student " + j%3 + " has a null field, skipping...")
+          }
+          else{
+            console.log("Attempting to insert a student...");
+            (async function sendquery(param) {
+              queries = []
+    
+              const pool2 = pool.promise();
+              console.log("length: ")
+                var query = toUnnamed("INSERT into mydb.Student VALUES(:net_id, :email, :utd_id, :student_hold);"
+                                      +"INSERT INTO mydb.Groups VALUES(:group_id, :group_name, :sponsor);"
+                                      +"INSERT INTO mydb.Group_Has_Student VALUES(:group_id, :net_id)", {
+                  net_id: name, //for now, there is no netid in the sheet, need to ask
+                  email: email,
+                  utd_id: id,
+                  student_hold: 0,
+                  group_id: group_id,
+                  group_name: group_name,
+                  sponsor: sponsor
+                });
+                queries.push(pool2.query(query[0], query[1]));
+            
+          
+              //console.log("NUMQUERIES: " + queries.length);
+              //later: change one of the students to be which student and why
+              const results = await Promise.all(queries).catch(() => { console.log("One of the students failed to insert.");  status=412;});
+            })();
+          }//async
+        }//inner loop
+      }//outer loop
+      return res.status(status).send("done with route");
+    })
+  });
 
 module.exports = router;

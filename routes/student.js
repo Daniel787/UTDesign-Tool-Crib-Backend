@@ -65,7 +65,7 @@ router.post("/insert", (req, res) => {
    });
 });
 
-router.post("/insertExcel", (req, res) => {
+router.post("/upload", (req, res) => {
 
   // File path.
   readXlsxFile('Examples.xlsx').then((rows) => {
