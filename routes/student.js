@@ -50,10 +50,11 @@ router.get("/holds/detailed",(req,res) => {
 
 router.post("/insert", (req, res) => {
   console.log("O3")
-   var query = toUnnamed("INSERT into mydb.Student VALUES(:net_id, :email, :utd_id, :student_hold)", {
+   var query = toUnnamed("INSERT into mydb.Student VALUES(:net_id, :name, :email, :utd_id, :student_hold)", {
      net_id: req.body.net_id,
      email: req.body.email,
      utd_id: req.body.utd_id,
+     name: req.body.name,
      student_hold: req.body.student_hold
    });
 
@@ -66,25 +67,19 @@ router.post("/insert", (req, res) => {
 });
 
 router.post("/upload", (req, res) => {
-
-  // File path.
   readXlsxFile('Examples.xlsx').then((rows) => {
-    // `rows` is an array of rows
-    // each row being an array of cells.
-    //console.log(rows);
-
-  
     var i,j;
     var status=200;
   
     for(i=1; i< rows.length; i++){
+       //declare default values for these 
+        var group_id= rows[i][0];
+        var group_name= rows[i][3];
+        var sponsor= rows[i][4];
 
-      //these are at fixed positions
-      var group_id= rows[i][0];
-      var group_name= rows[i][3];
-      var sponsor= rows[i][4];
+        //TODO: search the header in case some of the columns moved
 
-      for(j=6; j<24; j++){
+      for(j=6; j<24; j++){ //TODO: also don't hardcode this
         //get name, email, id
         var name= rows[i][j]
         j++;
@@ -104,11 +99,12 @@ router.post("/upload", (req, res) => {
   
             const pool2 = pool.promise();
             console.log("length: ")
-              var query = toUnnamed("INSERT into mydb.Student VALUES(:net_id, :email, :utd_id, :student_hold);"
+              var query = toUnnamed("INSERT into mydb.Student VALUES(:net_id, :name, :email, :utd_id, :student_hold);"
                                     +"INSERT INTO mydb.Groups VALUES(:group_id, :group_name, :sponsor);"
                                     +"INSERT INTO mydb.Group_Has_Student VALUES(:group_id, :net_id)", {
                 net_id: name, //for now, there is no netid in the sheet, need to ask
                 email: email,
+                name: name,
                 utd_id: id,
                 student_hold: 0,
                 group_id: group_id,
