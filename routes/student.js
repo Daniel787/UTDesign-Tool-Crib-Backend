@@ -70,6 +70,7 @@ router.post("/insert", (req, res) => {
 
 router.post("/upload", (req, res) => {  
   var failedinserts=[]
+  var duplicateinserts=[]
 
   readXlsxFile('Examples.xlsx').then((rows) => { //later change this to parse json object
     var i,j;
@@ -129,19 +130,19 @@ router.post("/upload", (req, res) => {
             
               var newStudent=0
               const results = await Promise.all(queries).catch(() => { console.log("Some random sql error");  status=412;});
-              results.forEach(([rows, fields]) => { if(rows.length !=0 ) {console.log("That student, group pair already exists... Overwrite?"); status=412;} });
+              results.forEach(([rows, fields]) => { if(rows.length !=0 ) {console.log("That student, group pair already exists... Overwrite?"); status=400;} });
               //later implement overwrite functionality
-              if(status == 412){
-                failedinserts.push(rows);
+              if(status == 400){
+                duplicateinserts.push(rows);
                 console.log("trying next student...")
-                break;
+                console.log("A")
               }
             }
             
             queries = []
             pool2 = pool.promise();
             console.log("length: ")
-              var query = toUnnamed("INSERT into mydb.Student VALUES(:net_id, :name, :email, :utd_id, :student_hold);"
+            var query = toUnnamed("INSERT into mydb.Student VALUES(:net_id, :name, :email, :utd_id, :student_hold);"
                                     +"INSERT INTO mydb.Groups VALUES(:group_id, :group_name, :sponsor);"
                                     +"INSERT INTO mydb.Group_Has_Student VALUES(:group_id, :net_id)", {
                 net_id: name, //for now, there is no netid in the sheet, need to ask
@@ -154,12 +155,12 @@ router.post("/upload", (req, res) => {
                 sponsor: sponsor
               });
               queries.push(pool2.query(query[0], query[1]));
-              const results = await Promise.all(queries).catch(() => { console.log("One of the students failed to insert.");  status=412;});
+              results = await Promise.all(queries).catch(() => { console.log("One of the students failed to insert.");  status=412;});
           })();
         }//async
       }//inner loop
     }//outer loop
-    return res.status(status).json(failedinserts);
+    return res.status(status).json(duplicateinserts);
   })
 });
 
