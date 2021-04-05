@@ -210,6 +210,8 @@ var transporter = nodemailer.createTransport({
   }
 });
 
+
+//emails, dates, id, tool_id
 function sendmails() {
   console.log("sendmails(): emailsdates.length: " + emailsdates.length)
   for (var i = 0; i < emailsdates.length; i++) {
@@ -220,8 +222,10 @@ function sendmails() {
       const mailOptions = {
         from: 'toolcributd@gmail.com', // sender address
         to: email, // list of receivers
-        subject: 'Hello.', // Subject line
-        html: '<p> Your rental is now overdue. A hold has been placed on your account. Please return the tool to remove it! </p>'// plain text body
+        subject: 'Tool Crib- overdue tool checked out by ' + emailsdates[i][2], // Subject line
+        html: '<p> This is an automated message from the UTD Tool Crib. ' + emailsdates[i][2]+ ' rented out '
+              + emailsdates[i][3]+ '. It is overdue as of ' + emailsdates[i][1] + 
+              '. A hold has been placed on your account. Please return the tool to remove it! </p>'// plain text body
       };
 
       transporter.sendMail(mailOptions, function (err, info) {
@@ -389,6 +393,8 @@ router.post("/rent", (req, res) => {
   (async function sendquery(param) {
     queries = []
     const pool2 = pool.promise();
+    var id= req.body.customer.net_id
+  
 
     for (i = 0; i < req.body.cart.length; i++) {
       //CHECK: does the student have a hold?
@@ -403,6 +409,8 @@ router.post("/rent", (req, res) => {
 
     //console.log("NUMQUERIES: " + queries.length);
     var results = await Promise.all(queries);
+    var valid=[]
+    var status=200
 
     results.forEach(([rows, fields]) => { if (rows.length == 1) { console.log("That student has a hold"); console.log(rows.length); status = 412; } });
     results.forEach(([rows, fields]) => { valid.push(rows[0]); console.log(rows[0]); });
@@ -492,23 +500,25 @@ router.post("/rent", (req, res) => {
       return res.status(400).send('NO_EMAIL');
     }
 
-    var email = 'sudhi.jagadeeshi@gmail.com'
-    var temp = new Date(Date.now())
-    //datedue.setTime(datedue.getTime() + (2*60*60*1000)); //add two hours
-    var datedue = new Date(temp.getTime() + (9 * 60 * 60 * 1000)); //add 6 seconds
+    for(i = 0; i < req.body.cart.length; i++){
+      var tool_id= req.body.cart[i].item.tool_id
+      var id= req.body.customer.net_id
+      var email = 'sudhi.jagadeeshi@gmail.com'
+      var temp = new Date(Date.now())
+      //datedue.setTime(datedue.getTime() + (2*60*60*1000)); //add two hours
+      var datedue = new Date(temp.getTime() + (6 * 1000)); //add 6 seconds
 
-    //when there are actual emails in the DB, uncomment
-    //results.forEach(([rows, fields]) => { emailsdates.push([rows[0], datedue]) });
+      //when there are actual emails in the DB, uncomment
+      //results.forEach(([rows, fields]) => { emailsdates.push([rows[0], datedue]) });
 
-    //tool crib always closes at 10
-    //console.log("HOURS", datedue.getHours());
-    if (datedue.getHours() >= 22) { console.log("This rental time is shortened because the crib closes at 10"); datedue.setHours(21); datedue.setMinutes(50); }
-
-    emailsdates.push([email, datedue])
-    console.log("EMAILSDATES: " + emailsdates[0][0] + emailsdates[0][1])
-
+      //tool crib always closes at 10
+      //console.log("HOURS", datedue.getHours());
+      if (datedue.getHours() >= 22) { console.log("This rental time is shortened because the crib closes at 10"); datedue.setHours(21); datedue.setMinutes(50); }
+      emailsdates.push([email, datedue, id, tool_id])
+    }
+    console.log("EMAILSDATES: " + emailsdates)
     res.send("finished");
-
+  
   })(); //end async
 });
 
@@ -517,15 +527,16 @@ router.post("/rent", (req, res) => {
 //i.e. http://localhost:port/inventory/tools/return?tool_id=111
 router.post("/return", (req, res) => {
   console.log("entered return rent route");
-  var id = req.query.tool_id;
-
   (async function sendquery(param) {
+    var id = req.query.tool_id;
     queries = []
 
     const pool2 = pool.promise();
 
     //for (i = 0; i < req.body.cart.length; i++) {
     //CHECK: is the tool requested already out for rent?
+
+    console.log("ID"+ id);
     var query = toUnnamed(
       "SELECT rt.tool_id, t.net_id, t.date "
       + "FROM mydb.transaction t, mydb.rented_tool rt, mydb.student s "
@@ -534,6 +545,7 @@ router.post("/return", (req, res) => {
       + "ORDER BY REVERSE (t.date); ", {
       tool_id: id
     });
+    
 
     queries.push(pool2.query(query[0], query[1]));
     //}
@@ -546,9 +558,9 @@ router.post("/return", (req, res) => {
     status = 200;
     var studentRenting = "";
 
-    results.forEach(([rows, fields]) => { if (rows.length == 0) { console.log("Nobody has that part checked out at this time"); status = 412; } });
+    results.forEach(([rows, fields]) => { if (rows.length == 0) { console.log("ROWS"+rows); console.log("Nobody has that part checked out at this time"); status = 412; } });
     if (status != 200) {
-      return res.status(status).send(valid);
+      return res.status(status).send("NOT_OUT");
     }
     results.forEach(([rows, fields]) => { console.log(rows[0]); valid.push(rows[0]); /*console.log(rows[0].net_id);*/ });
     results.forEach(([rows, fields]) => { studentRenting = rows[0].net_id });
