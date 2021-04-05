@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var toUnnamed = require('named-placeholders')();
+const readXlsxFile = require('read-excel-file/node');
 var uuid = require('uuid');
 var CronJob = require('cron').CronJob
 var nodemailer = require('nodemailer')
@@ -316,6 +317,71 @@ router.post("/insertMultiple", (req, res) => {
     const results = await Promise.all(queries).catch(() => { console.log("One of the tools failed to insert."); status = 412; });
     return res.status(status).send("done with route");
   })();
+});
+
+router.post("/upload", (req, res) => {
+  var failedinserts = []
+  var duplicateinserts = []
+
+  readXlsxFile('SampleToolsSheet.xlsx').then((rows) => {
+
+    var i,j;
+    var status=200;
+    (async function sendquery(param) {
+    for(i=1; i< rows.length; i++){
+        //get name, email, id
+        var id= rows[i][0]
+        var name= rows[i][1]
+
+        //console.log("name: " + name+"    email: " + email+"     id: " + id)
+        //this check fails, but it isn't technically necessary, the insert will just fail
+        if(id == null || name == null){
+          console.log("tool " + i + " has a null field, skipping...")
+        }
+        else{
+          console.log("id: " + id + "    name: " + name)
+          console.log("Check 1- Does the tool exist?")
+          queries = []
+
+          var pool2 = pool.promise();
+          var query = toUnnamed("SELECT * FROM mydb.rental_tool r WHERE r.tool_id = :tool_id", {
+            tool_id: id
+          });
+          queries.push(pool2.query(query[0], query[1]));
+
+          var newTool = 1
+          var results = await Promise.all(queries);
+          results.forEach(([rows, fields]) => {console.log("ROWS" + rows) });
+          results.forEach(([rows, fields]) => { if (rows.length != 0) { console.log("That tool exists"); status = 400; newTool=0; duplicateinserts.push(name) } });
+
+          if(newTool){
+            console.log("Attempting to insert a tool...");
+            queries = []
+  
+            const pool2 = pool.promise();
+            var query = toUnnamed("INSERT into mydb.rental_tool VALUES(:id, :name);", {
+                id: id,
+                name: name
+              });
+              queries.push(pool2.query(query[0], query[1]));
+          
+        
+            //console.log("NUMQUERIES: " + queries.length);
+            //later: change error msg to be which part and why
+            const results = await Promise.all(queries).catch(() => { console.log("One of the tools failed to insert.");  status=412; failedinserts.push(name)});
+          }
+        }//async
+    }//outer loop
+
+    if(status==400){
+      return res.status(status).json("duplicate parts: " + duplicateinserts + "          failed parts: " + failedinserts);
+    }
+    else{
+      return res.status(status).send("SUCCESS");
+    }
+
+  })();
+  })
 });
 
 

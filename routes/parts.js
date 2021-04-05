@@ -265,7 +265,7 @@ router.post("/upload", (req, res) => {
             results.forEach(([rows, fields]) => {console.log("ROWS" + rows) });
             results.forEach(([rows, fields]) => { if (rows.length != 0) { console.log("That part exists"); status = 400; newPart=0; duplicateinserts.push(name) } });
 
-            if(0){
+            if(newPart){
               console.log("Attempting to insert a part...");
               queries = []
     
@@ -287,7 +287,7 @@ router.post("/upload", (req, res) => {
       }//outer loop
 
       if(status==400){
-        return res.status(status).json("duplicate parts: " + duplicateinserts + "\nfailed parts: " + failedinserts);
+        return res.status(status).json("duplicate parts: " + duplicateinserts + "         failed parts: " + failedinserts);
       }
       else{
         return res.status(status).send("SUCCESS");
