@@ -14,26 +14,26 @@ router.get("/", (req, res) => {
     "SELECT * FROM mydb.rental_tool "
     + "natural join "
     + "( "
-    + "	SELECT rtr.tool_id, 'Rented' status "
-    + "	FROM mydb.transaction t , mydb.rented_tool rtr "
-    + "	WHERE (t.transaction_id = rtr.transaction_id) "
-    + "		AND (rtr.returned_date IS NULL) "
-    + "		AND NOW() <= (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) "
-    + "	UNION "
-    + "	SELECT rto.tool_id, 'Overdue' status "
-    + "	FROM mydb.transaction t , mydb.rented_tool rto "
-    + "	WHERE (t.transaction_id = rto.transaction_id) "
-    + "		AND (rto.returned_date IS NULL)  "
-    + "		AND NOW() > (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3)))  "
-    + "	UNION "
-    + "	SELECT rta.tool_id, 'Available' status  "
-    + "	FROM mydb.rental_tool rta "
-    + "	WHERE rta.tool_id  "
-    + "		NOT IN (SELECT rt.tool_id "
-    + "			FROM mydb.transaction t, mydb.rented_tool rt "
-    + "			WHERE (t.transaction_id = rt.transaction_id) "
-    + "				AND(rt.returned_date IS NULL) "
-    + "			ORDER BY REVERSE (t.date)) "
+    + "  SELECT rtr.tool_id tool_id, 'Rented' status, t.group_id group_id, t.net_id net_id "
+    + "  FROM mydb.transaction t , mydb.rented_tool rtr "
+    + "  WHERE (t.transaction_id = rtr.transaction_id) "
+    + "    AND (rtr.returned_date IS NULL) "
+    + "    AND NOW() <= (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) "
+    + "  UNION "
+    + "  SELECT rto.tool_id, 'Overdue' status, t.group_id group_id, t.net_id net_id "
+    + "  FROM mydb.transaction t , mydb.rented_tool rto "
+    + "  WHERE (t.transaction_id = rto.transaction_id) "
+    + "    AND (rto.returned_date IS NULL)  "
+    + "    AND NOW() > (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3)))  "
+    + "  UNION "
+    + "  SELECT rta.tool_id, 'Available' status, null group_id, null net_id  "
+    + "  FROM mydb.rental_tool rta "
+    + "  WHERE rta.tool_id  "
+    + "    NOT IN (SELECT rt.tool_id "
+    + "      FROM mydb.transaction t, mydb.rented_tool rt "
+    + "      WHERE (t.transaction_id = rt.transaction_id) "
+    + "        AND(rt.returned_date IS NULL) "
+    + "      ORDER BY REVERSE (t.date)) "
     + ") u;"
   pool.query(myquery, function (err, rows, fields) {
     if (err) console.log(err);
@@ -47,31 +47,32 @@ router.get("/search", (req, res) => {
   var id = req.query.id;
 
   var myquery = toUnnamed(
-  "SELECT * FROM mydb.rental_tool "
-  + "natural join "
-  + "( "
-  + "	SELECT rtr.tool_id, 'Rented' status "
-  + "	FROM mydb.transaction t , mydb.rented_tool rtr "
-  + "	WHERE (t.transaction_id = rtr.transaction_id) AND rtr.tool_id=:t_id"
-  + "		AND (rtr.returned_date IS NULL) "
-  + "		AND NOW() <= (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) "
-  + "	UNION "
-  + "	SELECT rto.tool_id, 'Overdue' status "
-  + "	FROM mydb.transaction t , mydb.rented_tool rto "
-  + "	WHERE (t.transaction_id = rto.transaction_id) AND rto.tool_id=:t_id"
-  + "		AND (rto.returned_date IS NULL)  "
-  + "		AND NOW() > (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3)))  "
-  + "	UNION "
-  + "	SELECT rta.tool_id, 'Available' status  "
-  + "	FROM mydb.rental_tool rta "
-  + "	WHERE rta.tool_id=:t_id AND rta.tool_id  "
-  + "		NOT IN (SELECT rt.tool_id "
-  + "			FROM mydb.transaction t, mydb.rented_tool rt "
-  + "			WHERE (t.transaction_id = rt.transaction_id)"
-  + "				AND(rt.returned_date IS NULL) "
-  + "			ORDER BY REVERSE (t.date)) "
-  + ") u;",{
-    t_id: id
+    "SELECT * FROM mydb.rental_tool "
+    + "natural join "
+    + "( "
+    + "  SELECT rtr.tool_id tool_id, 'Rented' status, t.group_id group_id, t.net_id net_id "
+    + "  FROM mydb.transaction t , mydb.rented_tool rtr "
+    + "  WHERE (t.transaction_id = rtr.transaction_id) "
+    + "    AND (rtr.returned_date IS NULL) "
+    + "    AND NOW() <= (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) "
+    + "  UNION "
+    + "  SELECT rto.tool_id, 'Overdue' status, t.group_id group_id, t.net_id net_id "
+    + "  FROM mydb.transaction t , mydb.rented_tool rto "
+    + "  WHERE (t.transaction_id = rto.transaction_id) "
+    + "    AND (rto.returned_date IS NULL)  "
+    + "    AND NOW() > (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3)))  "
+    + "  UNION "
+    + "  SELECT rta.tool_id, 'Available' status, null group_id, null net_id  "
+    + "  FROM mydb.rental_tool rta "
+    + "  WHERE rta.tool_id  "
+    + "    NOT IN (SELECT rt.tool_id "
+    + "      FROM mydb.transaction t, mydb.rented_tool rt "
+    + "      WHERE (t.transaction_id = rt.transaction_id) "
+    + "        AND(rt.returned_date IS NULL) "
+    + "      ORDER BY REVERSE (t.date)) "
+    + ") u "
+    + "WHERE u.tool_id = :tool_id;", {
+    tool_id: id
   });
   pool.query(myquery[0], myquery[1], function (err, rows, fields) {
     if (err) console.log(err);
@@ -96,35 +97,35 @@ router.get("/searchname", (req, res) => {
 
 router.post("/modify", (req, res) => {
   (async function sendquery(param) {
-      var pool2= pool.promise();
-      queries = []
+    var pool2 = pool.promise();
+    queries = []
 
-      var query = toUnnamed("SELECT * FROM mydb.rental_tool WHERE tool_id = :tool_id", {
-          tool_id: req.body.part_id
-      });
+    var query = toUnnamed("SELECT * FROM mydb.rental_tool WHERE tool_id = :tool_id", {
+      tool_id: req.body.part_id
+    });
 
-      queries.push(pool2.query(query[0], query[1]));
+    queries.push(pool2.query(query[0], query[1]));
 
-      var status = 200;
-      var results = await Promise.all(queries);
-      console.log("done with queries")
-      results.forEach(([rows, fields]) => { if(rows.length ==0 ) {console.log("No tool with that ID"); status = 412;} });
-      if(status == 412){
-          return res.status(status).send("INVALID_ID");
-      }
+    var status = 200;
+    var results = await Promise.all(queries);
+    console.log("done with queries")
+    results.forEach(([rows, fields]) => { if (rows.length == 0) { console.log("No tool with that ID"); status = 412; } });
+    if (status == 412) {
+      return res.status(status).send("INVALID_ID");
+    }
 
-      console.log("down here")
-      queries = []
-      var query = toUnnamed("UPDATE mydb.rental_tool SET name= :name WHERE tool_id= :tool_id", {
-          tool_id: req.body.tool_id,
-          name: req.body.name,
-      });
+    console.log("down here")
+    queries = []
+    var query = toUnnamed("UPDATE mydb.rental_tool SET name= :name WHERE tool_id= :tool_id", {
+      tool_id: req.body.tool_id,
+      name: req.body.name,
+    });
 
-      queries.push(pool2.query(query[0], query[1]));
+    queries.push(pool2.query(query[0], query[1]));
 
-      var status = 200;
-      var results = await Promise.all(queries);
-      res.send("done with route")
+    var status = 200;
+    var results = await Promise.all(queries);
+    res.send("done with route")
   })();
 });
 
