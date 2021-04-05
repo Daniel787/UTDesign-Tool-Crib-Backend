@@ -108,13 +108,13 @@ router.post("/upload", (req, res) => {
             });
             queries.push(pool2.query(query[0], query[1]));
 
-            var newStudent = 0
+            var newStudent = 1
             var results = await Promise.all(queries);
-            results.forEach(([rows, fields]) => { if (rows.length != 0) { console.log("That student exists"); console.log(rows.length); status = 412; newStudent = 1; } });
+            results.forEach(([rows, fields]) => { if (rows.length != 0) { console.log("That student exists"); console.log(rows.length); status = 412; newStudent = 0; } });
 
             //if the student already exists, check to see if his group already exists. 
             //If it does not, then we are adding another group for the same student
-            if (newStudent) {
+            if ( ! newStudent) {
               console.log("Check 2- Does the student, group pair exist?")
               queries = []
 
@@ -159,7 +159,7 @@ router.post("/upload", (req, res) => {
       }
     }
     if(status==400){
-      return res.status(status).json("duplicate students: " + duplicateinserts + "failed students: " + failedinserts);
+      return res.status(status).json("duplicate students: " + duplicateinserts + "\nfailed students: " + failedinserts);
     }
     else{
       return res.status(status).send("SUCCESS");

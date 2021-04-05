@@ -2,6 +2,7 @@ var express = require('express');
 var nodemon = require('nodemon');
 var router = express.Router();
 var toUnnamed = require('named-placeholders')();
+const readXlsxFile = require('read-excel-file/node');
 var uuid = require('uuid');
 var csv = require('express-csv');
 
@@ -228,66 +229,73 @@ router.post("/buy", (req, res) => {
 
 
 router.post("/upload", (req, res) => {
+    var failedinserts = []
+    var duplicateinserts = []
 
-    // File path.
-    readXlsxFile('ExamplePartsFile.xlsx').then((rows) => {
-      // `rows` is an array of rows
-      // each row being an array of cells.
-      //console.log(rows);
-    
+    readXlsxFile('SamplePartsSheet.xlsx').then((rows) => {
+
       var i,j;
       var status=200;
-    
+      (async function sendquery(param) {
       for(i=1; i< rows.length; i++){
-  
-        //these are at fixed positions
-        var group_id= rows[i][0];
-        var group_name= rows[i][3];
-        var sponsor= rows[i][4];
-  
-        for(j=6; j<24; j++){
           //get name, email, id
-          var name= rows[i][j]
-          j++;
-          var id= rows[i][j]
-          j++;
-          var email= rows[i][j]
+          var id= rows[i][0]
+          var name= rows[i][1]
+          var cost= rows[i][2]
+          var quantity= rows[i][3]
   
-          console.log("name: " + name+"    email: " + email+"     id: " + id)
+          //console.log("name: " + name+"    email: " + email+"     id: " + id)
           //this check fails, but it isn't technically necessary, the insert will just fail
-          if(name == null || email == null || id == null){
-            console.log("student " + j%3 + " has a null field, skipping...")
+          if(id == null || name == null || cost == null || quantity == null){
+            console.log("part " + i + " has a null field, skipping...")
           }
           else{
-            console.log("Attempting to insert a student...");
-            (async function sendquery(param) {
+            console.log("id: " + id + "    name: " + name)
+            console.log("Check 1- Does the part exist?")
+            queries = []
+
+            var pool2 = pool.promise();
+            var query = toUnnamed("SELECT * FROM mydb.inventory_part p WHERE p.part_id = :part_id", {
+              part_id: id
+            });
+            queries.push(pool2.query(query[0], query[1]));
+
+            var newPart = 1
+            var results = await Promise.all(queries);
+            results.forEach(([rows, fields]) => {console.log("ROWS" + rows) });
+            results.forEach(([rows, fields]) => { if (rows.length != 0) { console.log("That part exists"); status = 400; newPart=0; duplicateinserts.push(name) } });
+
+            if(0){
+              console.log("Attempting to insert a part...");
               queries = []
     
               const pool2 = pool.promise();
-              console.log("length: ")
-                var query = toUnnamed("INSERT into mydb.Student VALUES(:net_id, :email, :utd_id, :student_hold);"
-                                      +"INSERT INTO mydb.Groups VALUES(:group_id, :group_name, :sponsor);"
-                                      +"INSERT INTO mydb.Group_Has_Student VALUES(:group_id, :net_id)", {
-                  net_id: name, //for now, there is no netid in the sheet, need to ask
-                  email: email,
-                  utd_id: id,
-                  student_hold: 0,
-                  group_id: group_id,
-                  group_name: group_name,
-                  sponsor: sponsor
+              var query = toUnnamed("INSERT into mydb.inventory_part VALUES(:id, :name, :cost, :quantity);", {
+                  id: id,
+                  name: name,
+                  cost: cost,
+                  quantity: quantity
                 });
                 queries.push(pool2.query(query[0], query[1]));
             
           
               //console.log("NUMQUERIES: " + queries.length);
-              //later: change one of the students to be which student and why
-              const results = await Promise.all(queries).catch(() => { console.log("One of the students failed to insert.");  status=412;});
-            })();
+              //later: change error msg to be which part and why
+              const results = await Promise.all(queries).catch(() => { console.log("One of the tools failed to insert.");  status=412; failedinserts.push(name)});
+            }
           }//async
-        }//inner loop
       }//outer loop
-      return res.status(status).send("done with route");
+
+      if(status==400){
+        return res.status(status).json("duplicate parts: " + duplicateinserts + "\nfailed parts: " + failedinserts);
+      }
+      else{
+        return res.status(status).send("SUCCESS");
+      }
+
+    })();
     })
   });
+
 
 module.exports = router;
