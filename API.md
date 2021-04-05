@@ -139,6 +139,7 @@ For status == "Available", all columns afterwards have null value.
 `GET`, /inventory/tools/search
 
 Request: ?tool_id={INT} or ?name={STRING}
+
 Success Response : Status `200` and JSON:
 ```
 [
@@ -155,6 +156,7 @@ Success Response : Status `200` and JSON:
 ```
 For status == "Available", all columns afterwards have null value.
 Note that the JSON is always an array, whether zero, one or many tools match the search criteria.
+
 Failure Response : Status `400` Bad Request and errcode in response:
 * 'MISSING\_PARAMS' if no correct parameter is given
 
