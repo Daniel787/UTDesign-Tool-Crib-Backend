@@ -4,6 +4,7 @@
 `GET`, /inventory/parts
 
 Request: no parameters
+
 Success Response : Status `200` and JSON:
 ```
 [
@@ -20,6 +21,7 @@ Success Response : Status `200` and JSON:
 `GET`, /inventory/parts/search
 
 Request: ?part_id={INT} or ?name={STRING}
+
 Success Response : Status `200` and JSON:
 ```
 [
@@ -48,6 +50,7 @@ Request: JSON:
 } 
 ```
 Success Response : Status `200`
+
 Failure Response : Status `400` Bad Request and errcode in response:
 * 'ER\_DUP\_ENTRY' when part_id is not unique
 * 'NEGATIVE_QUANTITY'
@@ -78,6 +81,7 @@ Request: JSON:
 }
 ```
 Success Response : Status `200`
+
 Failure Response : Status `400` Bad Request and JSON in response:
 ```
 [
@@ -148,6 +152,7 @@ Request: JSON:
 }
 ```
 Success Response : Status `200`
+
 Failure Response : Status `400` Bad Request and errcode in response:
 * 'ER\_DUP\_ENTRY' when tool_id is not unique
 
@@ -174,6 +179,7 @@ Request: JSON:
 }
 ```
 Success Response : Status `200`
+
 Failure Response : Status `400` Bad Request and errcode in response:
 * 'STUDENT_HOLD' when the student renting has a hold
 * 'PART_ALREADY_OUT' when the tool is rented out already
