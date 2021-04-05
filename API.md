@@ -16,6 +16,25 @@ Success Response : Status `200` and JSON:
 ]
 ```
 
+### Search part by id or name
+`GET`, /inventory/parts/search
+
+Request: ?part_id={INT} or ?name={STRING}
+Success Response : Status `200` and JSON:
+```
+[
+    {
+        "part_id": 35791,
+        "name": "hot glue stick",
+        "quantity_available": 5,
+        "current_cost": 0.5
+    },...
+]
+```
+Note that the JSON is always an array, whether zero, one, or many tools match the search criteria.
+Failure Response : Status `400` Bad Request and errcode in response:
+* 'MISSING\_PARAMS' if no correct parameter is given
+
 ### Insert one part
 `POST`, /inventory/parts/insert
 
@@ -86,14 +105,19 @@ Success Response : Status `200` and JSON:
         "tool_id": {INT},
         "name": {STRING},
         "status": {STRING} in {"Available", "Rented", "Overdue"}
+        "group_id": {INT},
+        "net_id": {STRING},
+        "checkout_date": ex."2021-02-14 04:01:00.000",
+        "due_date":      ex."2021-02-14 06:05:00.000"
     },...
 ]
 ```
+For status == "Available", all columns afterwards have null value.
 
-### Search tool by id
+### Search tool by id or name
 `GET`, /inventory/tools/search
 
-Request: ?id={INT}
+Request: ?tool_id={INT} or ?name={STRING}
 Success Response : Status `200` and JSON:
 ```
 [
@@ -101,24 +125,17 @@ Success Response : Status `200` and JSON:
         "tool_id": {INT},
         "name": {STRING},
         "status": {STRING} in {"Available", "Rented", "Overdue"}
+        "group_id": {INT},
+        "net_id": {STRING},
+        "checkout_date": ex."2021-02-14 04:01:00.000",
+        "due_date":      ex."2021-02-14 06:05:00.000"
     },...
 ]
 ```
-
-### Search tool by name
-`GET`, /inventory/tools/searchname
-
-Request: ?name={STRING}
-Success Response : Status `200` and JSON:
-```
-[
-    {
-        "tool_id": {INT},
-        "name": {STRING},
-        "status": {STRING} in {"Available", "Rented", "Overdue"}
-    },...
-]
-```
+For status == "Available", all columns afterwards have null value.
+Note that the JSON is always an array, whether zero, one or many tools match the search criteria.
+Failure Response : Status `400` Bad Request and errcode in response:
+* 'MISSING\_PARAMS' if no correct parameter is given
 
 ### Insert one tool
 `POST`, /inventory/tools/insert
@@ -164,7 +181,5 @@ Failure Response : Status `400` Bad Request and errcode in response:
 * 'NO_EMAIL' when the student's email is NULL
 
 or Status `500` Internal Server Error and errcode in response
-
-
 
 
