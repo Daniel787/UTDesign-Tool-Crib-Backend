@@ -94,7 +94,24 @@ Failure Response : Status `400` Bad Request and JSON in response:
 ```
 or Status `500` Internal Server Error and errcode in response
 
+### Change a single item
+`POST`, /inventory/parts/modify/
 
+Request: JSON:
+```
+{
+  "part_id": 12345,
+  "name": "Changed",
+  "new_cost":7,
+  "new_quantity":89
+}
+```
+Success Response : Status `200`
+
+Failure Response : Status `400` Bad Request and errcode in response:
+* 'INVALID_ID' when the part to be modified does not exist
+
+or Status `500` Internal Server Error and errcode in response
 
 
 
@@ -185,6 +202,23 @@ Failure Response : Status `400` Bad Request and errcode in response:
 * 'PART_ALREADY_OUT' when the tool is rented out already
 * 'UNKNOWN_RENTAL_ERROR' when some error prevents the rental
 * 'NO_EMAIL' when the student's email is NULL
+
+or Status `500` Internal Server Error and errcode in response
+
+### Change a single item
+`POST`, /inventory/tools/modify/
+
+Request: JSON:
+```
+{
+  "tool_id": 12345,
+  "name": "NEW_NAME"
+}
+```
+Success Response : Status `200`
+
+Failure Response : Status `400` Bad Request and errcode in response:
+* 'INVALID_ID' when the tool to be modified does not exist
 
 or Status `500` Internal Server Error and errcode in response
 

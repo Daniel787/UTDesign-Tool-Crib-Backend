@@ -136,8 +136,8 @@ router.post("/modify", (req, res) => {
     var status = 200;
     var results = await Promise.all(queries);
     console.log("done with queries")
-    results.forEach(([rows, fields]) => { if (rows.length == 0) { console.log("No tool with that ID"); status = 412; } });
-    if (status == 412) {
+    results.forEach(([rows, fields]) => { if (rows.length == 0) { console.log("No tool with that ID"); status = 400; } });
+    if (status == 400) {
       return res.status(status).send("INVALID_ID");
     }
 
@@ -152,7 +152,7 @@ router.post("/modify", (req, res) => {
 
     var status = 200;
     var results = await Promise.all(queries);
-    res.send("done with route")
+    res.status(status).send("SUCCESS");
   })();
 });
 

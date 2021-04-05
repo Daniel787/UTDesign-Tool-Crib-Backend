@@ -68,8 +68,10 @@ router.post("/insert", (req, res) => {
    });
 });
 
-router.post("/upload", (req, res) => {
-  readXlsxFile('Examples.xlsx').then((rows) => {
+router.post("/upload", (req, res) => {  
+  var failedinserts=[]
+
+  readXlsxFile('Examples.xlsx').then((rows) => { //later change this to parse json object
     var i,j;
     var status=200;
   
@@ -97,9 +99,47 @@ router.post("/upload", (req, res) => {
         else{
           console.log("Attempting to insert a student...");
           (async function sendquery(param) {
+
+            console.log("Check 1- Does the student exist?")
             queries = []
+
+            var pool2 = pool.promise();
+              var query = toUnnamed("SELECT * FROM mydb.Student WHERE net_id= :id", {
+                id: id
+              });
+              queries.push(pool2.query(query[0], query[1]));
+          
+            var newStudent=0
+            const results = await Promise.all(queries).catch(() => { console.log("Some random sql error");  status=412;});
+            results.forEach(([rows, fields]) => { if(rows.length !=0 ) {console.log("That student already exists..."); newStudent = 1;} });
+              
+            //if the student already exists, check to see if his group already exists. 
+            //If it does not, then we are adding another group for the same student
+            if(!newStudent){
+              console.log("Check 2- Does the student, group pair exist?")
+              queries = []
+
+              var pool2 = pool.promise();
   
-            const pool2 = pool.promise();
+              var query = toUnnamed("SELECT * FROM mydb.Group_has_student WHERE net_id= :id AND group_id= :group_id", {
+                id: id,
+                group_id:group_id
+              });
+              queries.push(pool2.query(query[0], query[1]));
+            
+              var newStudent=0
+              const results = await Promise.all(queries).catch(() => { console.log("Some random sql error");  status=412;});
+              results.forEach(([rows, fields]) => { if(rows.length !=0 ) {console.log("That student, group pair already exists... Overwrite?"); status=412;} });
+              //later implement overwrite functionality
+              if(status == 412){
+                failedinserts.push(rows);
+                console.log("trying next student...")
+                break;
+              }
+            }
+            
+            queries = []
+            pool2 = pool.promise();
             console.log("length: ")
               var query = toUnnamed("INSERT into mydb.Student VALUES(:net_id, :name, :email, :utd_id, :student_hold);"
                                     +"INSERT INTO mydb.Groups VALUES(:group_id, :group_name, :sponsor);"
@@ -114,16 +154,12 @@ router.post("/upload", (req, res) => {
                 sponsor: sponsor
               });
               queries.push(pool2.query(query[0], query[1]));
-          
-        
-            //console.log("NUMQUERIES: " + queries.length);
-            //later: change one of the students to be which student and why
-            const results = await Promise.all(queries).catch(() => { console.log("One of the students failed to insert.");  status=412;});
+              const results = await Promise.all(queries).catch(() => { console.log("One of the students failed to insert.");  status=412;});
           })();
         }//async
       }//inner loop
     }//outer loop
-    return res.status(status).send("done with route");
+    return res.status(status).json(failedinserts);
   })
 });
 
