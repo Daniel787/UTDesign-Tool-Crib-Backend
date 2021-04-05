@@ -25,33 +25,31 @@ router.get("/", (req, res) => {
     })
 });
 
-//i.e. http://localhost:port/inventory/search?id=12345
+//i.e. http://localhost:port/inventory/parts/search?part_id=12345
 router.get("/search", (req, res) => {
-    //arguments
-    var id = req.query.id
+    //set query by arguments 'part_id' or 'name'
+    if (req.query.part_id) {
+        var myquery = toUnnamed(
+            "SELECT * FROM mydb.inventory_part p WHERE p.part_id = :part_id", {
+            part_id: req.query.part_id
+        });
+    }
+    else if (req.query.name) {
+        var myquery = toUnnamed(
+            "SELECT * FROM mydb.inventory_part p WHERE LOWER(p.name) LIKE LOWER(:name)", {
+            name: "%" + req.query.name + "%"
+        });
+    }
+    else {
+        //invalid parameters
+        return res.status(400).send("MISSING_PARAMS");
+    }
 
-    myquery = "SELECT * FROM mydb.inventory_part WHERE part_id=?"
-    pool.query(myquery, [id], function (err, rows, fields) {
-        if (err) console.log(err)
-
-        console.log('Response: ', rows)
+    //query DB
+    pool.query(myquery[0], myquery[1], function (err, rows, fields) {
+        if (err) console.log(err);
         res.json(rows);
-    })
-});
-
-//i.e. http://localhost:3006/inventory/search?name=phil 
-//should return 12345 phillips screw x
-router.get("/searchname", (req, res) => {
-    //arguments
-    var name = req.query.name
-
-    myquery = "SELECT * FROM mydb.inventory_part WHERE LOWER(name) LIKE LOWER('%" + name + "%')"
-    pool.query(myquery, function (err, rows, fields) {
-        if (err) console.log(err)
-
-        console.log('Response: ', rows)
-        res.json(rows);
-    })
+    });
 });
 
 router.post("/insert", (req, res) => {
@@ -79,7 +77,7 @@ router.post("/insert", (req, res) => {
 });
 
 
-//i.e. http://localhost:port/inventory
+//i.e. http://localhost:port/inventory/parts/insertMultiple
 router.post("/insertMultiple", (req, res) => {
     (async function sendquery(param) {
         queries = []

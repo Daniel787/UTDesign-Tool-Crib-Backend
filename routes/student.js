@@ -14,10 +14,10 @@ router.get("/",(req,res) => {
   })
 });
 
-//i.e. http://localhost:port/student/search?net-id=180004
+//i.e. http://localhost:port/student/search?net_id=180004
 router.get("/search",(req,res) => {
   //arguments
-  var net_id= req.query.net-id
+  var net_id= req.query.net_id
 
   myquery= "SELECT * FROM mydb.student WHERE net_id=?"
   pool.query(myquery, [net_id], function (err, rows, fields) {
