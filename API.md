@@ -26,10 +26,10 @@ Success Response : Status `200` and JSON:
 ```
 [
     {
-        "part_id": 35791,
-        "name": "hot glue stick",
-        "quantity_available": 5,
-        "current_cost": 0.5
+        "part_id": {},
+        "name": {STRING},
+        "quantity_available": {},
+        "current_cost": {}
     },...
 ]
 ```
@@ -55,6 +55,45 @@ Failure Response : Status `400` Bad Request and errcode in response:
 * 'ER\_DUP\_ENTRY' when part_id is not unique
 * 'NEGATIVE_QUANTITY'
 * 'NEGATIVE_COST'
+
+### Upload a sheet of parts
+`POST`, /inventory/parts/insert
+
+Request: JSON:
+```
+??
+```
+Success Response : Status `200`
+
+Failure Response : Status `400` Bad Request and JSON in response:
+{
+    "conflictinserts": {
+        "old": [
+            {
+                "part_id": {},
+                "name": {STRING},
+                "quantity_available": {},
+                "current_cost:": {}
+            }
+        ],
+        "new": [
+            {
+                "part_id": {},
+                "name": {STRING},
+                "quantity_available": {},
+                "current_cost:": {}
+            }
+        ]
+    },
+    "failedinserts": [
+        {
+            "part_id": {},
+            "name": {STRING},
+            "quantity_available": {},
+            "current_cost:": {}
+        }
+    ]
+}
 
 ### Buy a cart of parts
 `POST`, /inventory/parts/buy
@@ -213,8 +252,8 @@ or Status `500` Internal Server Error and errcode in response
 Request: JSON:
 ```
 {
-  "tool_id": 12345,
-  "name": "NEW_NAME"
+  "tool_id": {},
+  "name": {STRING}"
 }
 ```
 Success Response : Status `200`

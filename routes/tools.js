@@ -501,7 +501,7 @@ router.post("/rent", (req, res) => {
     }
 
     for(i = 0; i < req.body.cart.length; i++){
-      var tool_id= req.body.cart[i].item.tool_id
+      var tool_name= req.body.cart[i].item.tool_name
       var id= req.body.customer.net_id
       var email = 'sudhi.jagadeeshi@gmail.com'
       var temp = new Date(Date.now())
@@ -514,7 +514,7 @@ router.post("/rent", (req, res) => {
       //tool crib always closes at 10
       //console.log("HOURS", datedue.getHours());
       if (datedue.getHours() >= 22) { console.log("This rental time is shortened because the crib closes at 10"); datedue.setHours(21); datedue.setMinutes(50); }
-      emailsdates.push([email, datedue, id, tool_id])
+      emailsdates.push([email, datedue, id, tool_name])
     }
     console.log("EMAILSDATES: " + emailsdates)
     res.send("finished");
