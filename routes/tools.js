@@ -129,7 +129,7 @@ router.post("/modify", (req, res) => {
     queries = []
 
     var query = toUnnamed("SELECT * FROM mydb.rental_tool WHERE tool_id = :tool_id", {
-      tool_id: req.body.part_id
+      tool_id: req.body.tool_id
     });
 
     queries.push(pool2.query(query[0], query[1]));
@@ -223,9 +223,9 @@ function sendmails() {
         from: 'toolcributd@gmail.com', // sender address
         to: email, // list of receivers
         subject: 'Tool Crib- overdue tool checked out by ' + emailsdates[i][2], // Subject line
-        html: '<p> This is an automated message from the UTD Tool Crib. ' + emailsdates[i][2]+ ' rented out '
-              + emailsdates[i][3]+ '. It is overdue as of ' + emailsdates[i][1] + 
-              '. A hold has been placed on your account. Please return the tool to remove it! </p>'// plain text body
+        html: '<p> This is an automated message from the UTD Tool Crib. ' + emailsdates[i][2] + ' rented out '
+          + emailsdates[i][3] + '. It is overdue as of ' + emailsdates[i][1] +
+          '. A hold has been placed on your account. Please return the tool to remove it! </p>'// plain text body
       };
 
       transporter.sendMail(mailOptions, function (err, info) {
@@ -329,20 +329,20 @@ router.post("/upload", (req, res) => {
 
   readXlsxFile('SampleToolsSheet.xlsx').then((rows) => {
 
-    var i,j;
-    var status=200;
+    var i, j;
+    var status = 200;
     (async function sendquery(param) {
-    for(i=1; i< rows.length; i++){
+      for (i = 1; i < rows.length; i++) {
         //get name, email, id
-        var id= rows[i][0]
-        var name= rows[i][1]
+        var id = rows[i][0]
+        var name = rows[i][1]
 
         //console.log("name: " + name+"    email: " + email+"     id: " + id)
         //this check fails, but it isn't technically necessary, the insert will just fail
-        if(id == null || name == null){
+        if (id == null || name == null) {
           console.log("tool " + i + " has a null field, skipping...")
         }
-        else{
+        else {
           console.log("id: " + id + "    name: " + name)
           console.log("Check 1- Does the tool exist?")
           queries = []
@@ -355,36 +355,36 @@ router.post("/upload", (req, res) => {
 
           var newTool = 1
           var results = await Promise.all(queries);
-          results.forEach(([rows, fields]) => {console.log("ROWS" + rows) });
-          results.forEach(([rows, fields]) => { if (rows.length != 0) { console.log("That tool exists"); status = 400; newTool=0; duplicateinserts.push(name) } });
+          results.forEach(([rows, fields]) => { console.log("ROWS" + rows) });
+          results.forEach(([rows, fields]) => { if (rows.length != 0) { console.log("That tool exists"); status = 400; newTool = 0; duplicateinserts.push(name) } });
 
-          if(newTool){
+          if (newTool) {
             console.log("Attempting to insert a tool...");
             queries = []
-  
+
             const pool2 = pool.promise();
             var query = toUnnamed("INSERT into mydb.rental_tool VALUES(:id, :name);", {
-                id: id,
-                name: name
-              });
-              queries.push(pool2.query(query[0], query[1]));
-          
-        
+              id: id,
+              name: name
+            });
+            queries.push(pool2.query(query[0], query[1]));
+
+
             //console.log("NUMQUERIES: " + queries.length);
             //later: change error msg to be which part and why
-            const results = await Promise.all(queries).catch(() => { console.log("One of the tools failed to insert.");  status=412; failedinserts.push(name)});
+            const results = await Promise.all(queries).catch(() => { console.log("One of the tools failed to insert."); status = 412; failedinserts.push(name) });
           }
         }//async
-    }//outer loop
+      }//outer loop
 
-    if(status==400){
-      return res.status(status).json("duplicate parts: " + duplicateinserts + "          failed parts: " + failedinserts);
-    }
-    else{
-      return res.status(status).send("SUCCESS");
-    }
+      if (status == 400) {
+        return res.status(status).json("duplicate parts: " + duplicateinserts + "          failed parts: " + failedinserts);
+      }
+      else {
+        return res.status(status).send("SUCCESS");
+      }
 
-  })();
+    })();
   })
 });
 
@@ -393,8 +393,8 @@ router.post("/rent", (req, res) => {
   (async function sendquery(param) {
     queries = []
     const pool2 = pool.promise();
-    var id= req.body.customer.net_id
-  
+    var id = req.body.customer.net_id
+
 
     for (i = 0; i < req.body.cart.length; i++) {
       //CHECK: does the student have a hold?
@@ -409,8 +409,8 @@ router.post("/rent", (req, res) => {
 
     //console.log("NUMQUERIES: " + queries.length);
     var results = await Promise.all(queries);
-    var valid=[]
-    var status=200
+    var valid = []
+    var status = 200
 
     results.forEach(([rows, fields]) => { if (rows.length == 1) { console.log("That student has a hold"); console.log(rows.length); status = 412; } });
     results.forEach(([rows, fields]) => { valid.push(rows[0]); console.log(rows[0]); });
@@ -500,9 +500,9 @@ router.post("/rent", (req, res) => {
       return res.status(400).send('NO_EMAIL');
     }
 
-    for(i = 0; i < req.body.cart.length; i++){
-      var tool_name= req.body.cart[i].item.tool_name
-      var id= req.body.customer.net_id
+    for (i = 0; i < req.body.cart.length; i++) {
+      var tool_name = req.body.cart[i].item.tool_name
+      var id = req.body.customer.net_id
       var email = 'sudhi.jagadeeshi@gmail.com'
       var temp = new Date(Date.now())
       //datedue.setTime(datedue.getTime() + (2*60*60*1000)); //add two hours
@@ -518,7 +518,7 @@ router.post("/rent", (req, res) => {
     }
     console.log("EMAILSDATES: " + emailsdates)
     res.send("finished");
-  
+
   })(); //end async
 });
 
@@ -536,7 +536,7 @@ router.post("/return", (req, res) => {
     //for (i = 0; i < req.body.cart.length; i++) {
     //CHECK: is the tool requested already out for rent?
 
-    console.log("ID"+ id);
+    console.log("ID" + id);
     var query = toUnnamed(
       "SELECT rt.tool_id, t.net_id, t.date "
       + "FROM mydb.transaction t, mydb.rented_tool rt, mydb.student s "
@@ -545,7 +545,7 @@ router.post("/return", (req, res) => {
       + "ORDER BY REVERSE (t.date); ", {
       tool_id: id
     });
-    
+
 
     queries.push(pool2.query(query[0], query[1]));
     //}
@@ -558,7 +558,7 @@ router.post("/return", (req, res) => {
     status = 200;
     var studentRenting = "";
 
-    results.forEach(([rows, fields]) => { if (rows.length == 0) { console.log("ROWS"+rows); console.log("Nobody has that part checked out at this time"); status = 412; } });
+    results.forEach(([rows, fields]) => { if (rows.length == 0) { console.log("ROWS" + rows); console.log("Nobody has that part checked out at this time"); status = 412; } });
     if (status != 200) {
       return res.status(status).send("NOT_OUT");
     }
