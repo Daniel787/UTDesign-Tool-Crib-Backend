@@ -22,7 +22,7 @@ router.get("/simple/csv", (req, res) => {
   }
 
   myquery =
-   "SELECT t.group_id `group#`, SUM(pp.purchased_cost * pp.quantity_purchased) `dollars` "
+   "SELECT t.group_id `group_id`, SUM(pp.purchased_cost * pp.quantity_purchased) `total` "
   +"FROM "
   +  "(SELECT * FROM mydb.transaction "
   +  "WHERE transaction.type='purchase' "
@@ -212,7 +212,7 @@ router.get("/simple", (req, res) => {
   }
 
   myquery =
-   "SELECT t.group_id `group#`, SUM(pp.purchased_cost * pp.quantity_purchased) `dollars` "
+   "SELECT t.group_id `group_id`, SUM(pp.purchased_cost * pp.quantity_purchased) `total` "
   +"FROM "
   +  "(SELECT * FROM mydb.transaction "
   +  "WHERE transaction.type='purchase' "
