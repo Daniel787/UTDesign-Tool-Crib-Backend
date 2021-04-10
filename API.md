@@ -408,12 +408,16 @@ Failure Response : Status `400` Bad Request and JSON in response:
 {
     "conflictgroups": [
         {
-            
+            "group_id" : {INT},
+            "group_name" :{STRING},
+            "group_sponsor": {STRING}
         }
     ],
-    "failedinserts": [
+    "failedgroups": [
         {
-            
+             "group_id" : {INT},
+            "group_name" :{STRING},
+            "group_sponsor": {STRING}
         }
     ]
     "conflictinserts": {

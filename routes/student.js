@@ -68,6 +68,50 @@ router.post("/insert", (req, res) => {
   });
 });
 
+//i.e. http://localhost:port/group/modify
+router.post("/modify", (req, res) => {
+  (async function sendquery(param) {
+      queries = []
+      var pool2= pool.promise();
+      var query = toUnnamed("SELECT * FROM mydb.Student WHERE net_id = :net_id", {
+          net_id: req.body.net_id,
+          name: req.body.name,
+          email: req.body.email,
+          utd_id: req.body.utd_id,
+          student_hold: req.body.student_hold
+      });
+
+      queries.push(pool2.query(query[0], query[1]));
+
+      var status = 200;
+      var results = await Promise.all(queries);
+      console.log("done with queries")
+      results.forEach(([rows, fields]) => { if (rows.length == 0) { console.log("No student with that ID"); status = 412; } });
+      if (status == 400) {
+          return res.status(status).send("INVALID_ID");
+      }
+
+      queries = []
+      console.log("down here")
+      var query = toUnnamed("UPDATE mydb.Student SET name= :name, email= :email, utd_id= :utd_id, student_hold= :student_hold WHERE net_id = :net_id", {
+        net_id: req.body.net_id,
+        name: req.body.name,
+        email: req.body.email,
+        utd_id: req.body.utd_id,
+        student_hold: req.body.student_hold
+      });
+      queries.push(pool2.query(query[0], query[1]));
+      status = 200;
+      var results = await Promise.all(queries).catch(() => { status = 400; });
+      if(status==200){
+        return res.status(status).send("SUCCESS");
+      }
+      else{
+        return res.status(status).send("SQL_ERROR");
+      }
+  })();
+});
+
 router.post("/upload", (req, res) => {
   var failedinserts = []
   var conflictinserts = [] 

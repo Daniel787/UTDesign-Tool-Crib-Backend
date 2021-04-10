@@ -34,7 +34,6 @@ app.use('/', rootRouter);
 app.use('/inventory', inventoryRouter);
 app.use('/student', studentRouter);
 app.use('/group', groupRouter);
-app.use('/group', groupRouter);
 app.use('/expense', expenseRouter);
 
 // catch 404 and forward to error handler
