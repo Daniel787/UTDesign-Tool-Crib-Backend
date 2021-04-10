@@ -39,6 +39,14 @@ router.get("/searchname",(req,res) => {
   })
 });
 
+/*
+{
+    "group_id": 357,
+    "group_name": "new group name",
+    "group_sponsor": "billy"
+}
+*/
+
 //i.e. http://localhost:port/group/modify
 router.post("/modify", (req, res) => {
   (async function sendquery(param) {
