@@ -157,6 +157,50 @@ router.post("/modify", (req, res) => {
   })();
 });
 
+//multiplies all instances of the id in the database by -1
+router.post("/delete", (req, res) => {
+  var tool_id = req.query.id;
+  console.log("Tool to delete: ", tool_id);
+
+  (async function sendquery(param) {
+    var pool2 = pool.promise();
+    queries = []
+
+    var query = toUnnamed("SELECT * FROM mydb.rental_tool WHERE tool_id = :tool_id", {
+      tool_id: tool_id
+    });
+
+    queries.push(pool2.query(query[0], query[1]));
+
+    var status = 200;
+    var results = await Promise.all(queries);
+    results.forEach(([rows, fields]) => { if (rows.length == 0) { console.log("No tool with that ID"); status = 400; } });
+    if (status == 400) {
+      return res.status(status).send("INVALID_ID");
+    }
+
+    console.log("down here")
+    queries = []
+    var query = toUnnamed("SET FOREIGN_KEY_CHECKS=0;" 
+                          +" UPDATE `mydb`.`Rented_Tool` SET `tool_id` = :tool_id * -1 WHERE (`tool_id` = :tool_id);"
+                          + "UPDATE `mydb`.`Rental_Tool` SET `tool_id` = :tool_id * -1 WHERE (`tool_id` = :tool_id);"
+                          + "SET FOREIGN_KEY_CHECKS=1; ", {
+      tool_id: tool_id,
+    });
+
+    queries.push(pool2.query(query[0], query[1]));
+
+    var status = 200;
+    var results = await Promise.all(queries).catch(() => { console.log("Deletion failed."); status = 400; });
+    if(status == 400){
+        return res.status(status).send("SQL_ERROR");
+    }
+    else{
+        return res.status(status).send("SUCCESS")
+    }
+  })();
+});
+
 /*
 //i.e. http://localhost:port/inventory/tools/search?name=phil
 router.get("/searchname", (req, res) => {
