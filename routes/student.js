@@ -70,100 +70,268 @@ router.post("/insert", (req, res) => {
 
 router.post("/upload", (req, res) => {
   var failedinserts = []
-  var duplicateinserts = []
+  var conflictinserts = [] 
+  var newtuples = []
+  var oldtuples = []
 
-  readXlsxFile('Examples.xlsx').then((rows) => { //later change this to parse json object
+  var failedgroups = []
+  var conflictgroups = [] 
+  var oldgroups=[]
+  var newgroups=[]
+
+  readXlsxFile('ExampleStudentGroupsSheet.xlsx').then((rows) => { //later change this to parse json object
     var i, j;
     var status = 200;
 
     (async function sendquery(param) {
-
-      for (i = 1; i < rows.length; i++) {
+      //Notes: we first run the group checks, then the student checks.
+      //Group checks: has group info changed? sponsor, name etc or is it null
+      console.log("rows.length" + rows.length)
+      for (i = 1; i < rows.length; i++) { //ignore first row, it is header
+        console.log("GROUP: " + group_id + "    NAME:   " + group_name + "    SPONSOR:   " + group_sponsor)
         //declare default values for these 
         var group_id = rows[i][0];
         var group_name = rows[i][3];
-        var sponsor = rows[i][4];
+        var group_sponsor = rows[i][4]
+
+        if (group_id == null || group_name == null || group_sponsor == null) {
+          console.log("group " + i + " has a null field, pushing to failed groups...")
+          failedgroups.push({ "group_id": group_id, "group_name": group_name, "group_sponsor:": group_sponsor });
+        }
+
+        queries = []
+        var pool2 = pool.promise();
+        //we want to examine matching group_id
+        var query = toUnnamed("SELECT * FROM mydb.groups g WHERE g.group_id = :group_id AND g.group_name = :group_name"
+            + " AND group_sponsor = :group_sponsor", {
+            group_id: group_id,
+            group_name: group_name,
+            group_sponsor: group_sponsor
+        });
+        queries.push(pool2.query(query[0], query[1]));
+
+        var newGroup = 1
+        var results = await Promise.all(queries);
+        results.forEach(([rows, fields]) => {
+            if (rows.length == 1) {  //should be only 1, not 2
+                console.log("That group exists, and is entirely identical to one in the database. Will not be inserted.")
+                newGroup = 0
+            }
+        });
+
+        queries = []
+        var pool2 = pool.promise();
+        //we want to examine matching pgroup id, but difference something else
+        var query = toUnnamed("SELECT * FROM mydb.groups g WHERE g.group_id = :group_id AND (g.group_name <> :group_name"
+            + " OR group_sponsor <> :group_sponsor)", {
+            group_id: group_id,
+            group_name: group_name,
+            group_sponsor: group_sponsor
+        });
+        queries.push(pool2.query(query[0], query[1]));
+
+        var results = await Promise.all(queries)
+        results.forEach(([rows, fields]) => {
+            if (rows.length == 1) {
+                console.log("ROWS: " + rows[0].current_cost)
+                oldgroups.push({ "group_id": rows[0].group_id, "group_name": rows[0].group_name, "group_sponsor": rows[0].group_sponsor })
+                newgroups.push({ "group_id": group_id, "group_name": group_name, "group_sponsor": group_sponsor })
+                console.log("That group exists, but you have supplied different values for one of the attributes");
+                console.log("oldgroups" + oldgroups)
+                console.log("newtuple" + newgroups)
+                status = 400;
+                newGroup = 0;
+                conflictgroups.push([oldgroups, newgroups]) //again, not really necessary
+            }
+        });
+
+        if(newGroup){
+          //+"INSERT INTO mydb.Groups VALUES(:group_id, :group_name, :sponsor);"
+          queries = []
+          pool2 = pool.promise();
+          var query = toUnnamed("INSERT into mydb.Groups VALUES (:group_id, :group_name, :group_sponsor)", {
+              group_id: group_id,
+              group_name: group_name,
+              group_sponsor: group_sponsor
+            });
+          queries.push(pool2.query(query[0], query[1]));
+          var results2 = await Promise.all(queries).catch(() => { 
+            console.log("FAILED TO INSERTED GROUP");
+            status=412;
+            failedgroups.push({ "group_id": group_id, "group_name": group_name, "group_sponsor": group_sponsor })
+          });
+        }
+      }
+
+      var myjson = ""
+      myjson = { "conflictgroups": { "old": oldgroups, "new": newgroups }, "failedgroups": failedgroups, "conflictinserts": conflictinserts, "failedinserts": failedinserts}
+
+      //return here if any groups are screwed
+      if (status == 400) {
+          return res.status(status).json(myjson);
+      }
+      
+      //Now enter the process of inserting students. This time, no checks on group are performed.
+      for (i = 1; i < rows.length; i++) {
+        var group_id = rows[i][0];
+        var group_name = rows[i][3]; //dont need this and sponsor for this insert student
+        var group_sponsor = rows[i][4]
 
         for (j = 6; j < 24; j++) { //TODO: also don't hardcode this
-          //get name, email, id
-          var name = rows[i][j]
-          j++;
-          var id = rows[i][j]
-          j++;
-          var email = rows[i][j]
-          //this check fails, but it isn't technically necessary, the insert will just fail
-          if (name == null || email == null || id == null) {
-            console.log("student " + j % 3 + " has a null field, skipping...")
-          }
-          else {
-            console.log("name: " + name + "    email: " + email + "     id: " + id)
-            console.log("Attempting to insert a student...");
-
-            console.log("Check 1- Does the student exist?")
-            queries = []
-
-            var pool2 = pool.promise();
-            var query = toUnnamed("SELECT * FROM mydb.Student WHERE net_id= :id", {
-              id: id
-            });
-            queries.push(pool2.query(query[0], query[1]));
-
-            var newStudent = 1
-            var results = await Promise.all(queries);
-            results.forEach(([rows, fields]) => { if (rows.length != 0) { console.log("That student exists"); console.log(rows.length); status = 412; newStudent = 0; } });
-
-            //if the student already exists, check to see if his group already exists. 
-            //If it does not, then we are adding another group for the same student
-            if ( ! newStudent) {
-              console.log("Check 2- Does the student, group pair exist?")
+            var name = rows[i][j]
+            j++;
+            var net_id = rows[i][j]
+            j++;
+            var email = rows[i][j]
+             
+            console.log("NAME: " + name + "    NET_ID:  " + net_id + "   " + "    EMAIL: " + email)
+            //Start performing student checks
+            //net_id, name, email, utd_id, student_hold
+            if ( (name == null || email == null || net_id == null)) {
+              console.log("student " + j % 3 + " has a null field, skipping...")
+              if(! ((name == null && email == null && net_id == null) )){ //don't want to push all null students to failedinserts 
+                failedinserts.push({ "net_id": net_id, "name" :name, "email": email, "utd_id": -1, "student_hold":0 });
+              }
+            }
+            else {
               queries = []
-
               var pool2 = pool.promise();
-
-              var query = toUnnamed("SELECT * FROM mydb.Group_has_student WHERE net_id= :id AND group_id= :group_id", {
-                id: id,
-                group_id: group_id
+              //we want to examine matching student id, but different something else
+              var query = toUnnamed("SELECT * FROM mydb.Student s WHERE s.net_id = :net_id AND name = :name AND"
+                  + " email = :email", {
+                  name:name,
+                  email:email,
+                  net_id:net_id
               });
               queries.push(pool2.query(query[0], query[1]));
 
-              var newStudent = 0
-              const results = await Promise.all(queries).catch(() => { console.log("Some random sql error"); status = 400; });
-              results.forEach(([rows, fields]) => { if (rows.length != 0) { console.log("That student, group pair already exists... Overwrite?"); status = 400; } });
-              //later implement overwrite functionality
-              if (status == 400) {
-                duplicateinserts.push(name);
-                console.log("trying next student...")
-              }
-            }
-
-            console.log("Clear to insert" + id + name + email)
-            queries = []
-            pool2 = pool.promise();
-            var query = toUnnamed("INSERT into mydb.Student VALUES(:net_id, :name2, :email2, :utd_id2, :student_hold2);"
-              +"INSERT INTO mydb.Groups VALUES(:group_id, :group_name, :sponsor);"
-              +"INSERT INTO mydb.Group_Has_Student VALUES(:group_id, :net_id)"
-              , {
-                net_id: id,
-                name2: name,
-                email2: email,
-                utd_id2: id, //this doubles up for now
-                student_hold2: 0,
-                group_id: group_id,
-                group_name: group_name,
-                sponsor: sponsor
+              var newStudent = 1
+              var secondGroup=0; //will never be changed unless !newStudent
+              var results3 = await Promise.all(queries);
+              results3.forEach(([rows, fields]) => {
+                  if (rows.length == 1) {  //should be only 1, not 2
+                      console.log("That student exists, and is entirely identical to one in the database. Will not be inserted.")
+                      newStudent = 0
+                  }
               });
-            queries.push(pool2.query(query[0], query[1]));
-            var results2 = await Promise.all(queries).catch(() => { console.log("One of the students failed to insert."); status = 400; failedinserts.push(name)});
-            console.log("OK");
+
+              queries = []
+
+              var pool2 = pool.promise();
+              //we want to examine matching part id, but difference something else
+              var query = toUnnamed("SELECT * FROM mydb.Student s WHERE s.net_id = :net_id AND (name <> :name OR"
+              + " email <> :email)", {
+                name:name,
+                email:email,
+                net_id:net_id
+              });
+              queries.push(pool2.query(query[0], query[1]));
+
+              var results2 = await Promise.all(queries);
+              results2.forEach(([rows, fields]) => {
+                if (rows.length != 0) {
+                  //net_id, name, email, utd_id, student_hold
+                  oldtuples.push({ "net_id": rows[0].net_id, "name": rows[0].name, "email": rows[0].email, "utd_id:": rows[0].utd_id, "student_hold": rows[0].student_hold })
+                  newtuples.push({ "net_id": net_id, "name": name, "email": email, "utd_id:": rows[0].utd_id, "student_hold": rows[0].student_hold  })
+                  console.log("That student exists, but you have supplied different values for either email or name"); //later, we will add net_id to the sheet
+                  console.log("oldtuple" + oldtuples)
+                  console.log("newtuple" + newtuples)
+                  status = 400;
+                  newStudent = 0;
+                  conflictinserts.push([oldtuples, newtuples])
+                }
+              });
+
+              
+              //does the student, group pair exist
+              if(! newStudent){
+                queries = []
+                var pool2 = pool.promise();
+                var query = toUnnamed("SELECT * FROM mydb.Group_has_student ghs WHERE ghs.net_id= :id AND ghs.group_id = :group_id", {
+                  id: net_id,
+                  group_id: group_id
+                });
+                queries.push(pool2.query(query[0], query[1]));
+
+                const results = await Promise.all(queries);
+                results.forEach(([rows, fields]) => { if (rows.length == 0) {secondGroup=0; console.log("The student,group pair already exissts"); } });
+              
+
+              //is he joining a second group?
+              
+                queries = []
+                var pool2 = pool.promise();
+                //query is bad- should return if the student exists AND if his group,student pair is not in the table
+                console.log("GHS PAIRS: ", net_id, "       ", group_id)
+                var query = toUnnamed("SELECT * FROM mydb.Group_has_student ghs WHERE ghs.group_id = :group_id AND ghs.net_id= :net_id", {
+                  net_id: net_id,
+                  group_id: group_id
+                });
+                queries.push(pool2.query(query[0], query[1]));
+
+                const results4 = await Promise.all(queries);
+                results4.forEach(([rows, fields]) => { if (rows.length == 0) { secondGroup=1; console.log("The student exists, but he is joining another group."); } });
+              }
+              console.log("NEWSTUDENT: ", newStudent, "secondGroup", secondGroup)
+                //newStudent means either the student is brand new OR the student is entering a second group
+                if (newStudent && !secondGroup) {
+                  console.log("Clear to insert student AND student/group relationship: " + net_id + name + email + group_id)
+                  queries = []
+                  pool2 = pool.promise();
+                  var query = toUnnamed("INSERT into mydb.Student VALUES(:net_id, :name, :email, :utd_id, :student_hold);"
+                    +"INSERT INTO mydb.Group_Has_Student VALUES(:group_id, :net_id)"
+                    ,{
+                      net_id: net_id,
+                      name: name,
+                      email: email,
+                      utd_id: 0, //this is an optional field
+                      student_hold: 0,
+                      group_id: group_id
+                  });
+                  queries.push(pool2.query(query[0], query[1]));
+                  var results2 = await Promise.all(queries).catch(() => { 
+                    console.log("One of the students failed to insert."); 
+                    status = 400; 
+                    failedinserts.push({ "net_id": net_id, "name": name, "email": email, "utd_id:": -1, "student_hold": 0});
+                  });
+                }
+                else if(!newStudent && secondGroup){
+                  console.log("Clear to insert student/group relationship: " + net_id + name + email)
+                  queries = []
+                  pool2 = pool.promise();
+                  var query = toUnnamed("INSERT INTO mydb.Group_Has_Student VALUES(:group_id, :net_id)"
+                    ,{
+                      net_id: net_id,
+                      group_id: group_id
+                  });
+                  queries.push(pool2.query(query[0], query[1]));
+                  var results2 = await Promise.all(queries).catch(() => { 
+                    console.log("One of the student/group relationships failed to insert."); 
+                    status = 400;
+                    failedinserts.push({ "net_id": net_id, "name": name, "email": email, "utd_id:": -1, "student_hold": 0});
+                  });
+                }
+                else if(newStudent && secondGroup) {
+                  console.log("Student is already in the database, but is trying to join a second group")
+                  console.log("this shouldnt happen?")
+                }
+                else{ //!newStudent and !secondGroup
+                  console.log("We already have this, skip...")
+                }
+          }
         }
       }
-    }
-    if(status==400){
-      return res.status(status).json("duplicate students: " + duplicateinserts + "\nfailed students: " + failedinserts);
-    }
-    else{
-      return res.status(status).send("SUCCESS");
-    }
+    
+      var myjson2 = ""
+      myjson2 = { "conflictgroups:": conflictgroups, "failedgroups" :failedgroups, "conflictinserts": { "old": oldtuples, "new": newtuples }, "failedinserts": failedinserts }
+      console.log("FAILED NUMBER: ", failedinserts.length)
+      //return here if any groups are screwed
+      if (status == 400) {
+          return res.status(status).json(myjson2);
+      }
+      else{
+        return res.send("SUCCESS")
+      }
 
   })();
   })

@@ -237,7 +237,7 @@ router.post("/upload", (req, res) => {
     var i, j;
     var status = 200;
     (async function sendquery(param) {
-        for (i = 1; i < req.body.length; i++) {
+        for (i = 0; i < req.body.length; i++) {
             //get name, email, id
             var id = req.body[i].part_id
             var name = req.body[i].name
@@ -295,7 +295,7 @@ router.post("/upload", (req, res) => {
                     if (rows.length == 1) {
                         console.log("ROWS: " + rows[0].current_cost)
                         oldtuples.push({ "part_id": rows[0].part_id, "name": rows[0].name, "quantity_available": rows[0].quantity_available, "current_cost:": parseFloat(rows[0].current_cost) })
-                        newtuples.push({ "part_id": id, "name": name, "quantity_available": quantity, "current_cost:": cost })
+                        newtuples.push({ "part_id": parseInt(id), "name": name, "quantity_available": parseInt(quantity), "current_cost:": parseFloat(cost) })
                         console.log("That part exists, but you have supplied different values for one of the attributes");
                         console.log("oldtuple" + oldtuples)
                         console.log("newtuple" + newtuples)
