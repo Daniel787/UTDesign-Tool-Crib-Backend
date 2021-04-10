@@ -264,3 +264,92 @@ Failure Response : Status `400` Bad Request and errcode in response:
 or Status `500` Internal Server Error and errcode in response
 
 
+## Expense
+### Get simple expense report
+`GET`, /expense/simple
+
+Request: 
+?start={STRING} as YYYYMMDD
+&end={STRING} as YYYYMMDD
+
+Optional:
+&csv={STRING} as "true"
+
+Success Response : Status `200` and JSON:
+```
+[
+    {
+        "group_id": {INT},
+        "total": {DECIMAL} dollars of spending in date range (INCLUSIVE)
+    },...
+]
+```
+OR
+CSV file with name "YYYYMMDD-YYYYMMDD_simple_report.csv"
+
+Failure Response : Status `400` Bad Request and errcode in response:
+* 'MISSING_PARAMS' when start or end date missing
+
+### Get medium detail expense report
+`GET`, /expense/medium
+
+Request: 
+?start={STRING} as YYYYMMDD
+&end={STRING} as YYYYMMDD
+
+Optional:
+&csv={STRING} as "true"
+
+Success Response : Status `200` and JSON:
+```
+[
+    {
+        "group_id": {INT},
+        "total": {DECIMAL} dollars of group spending in date range (INCLUSIVE),
+        "net_id": {STRING},
+        "student_total": {DECIMAL} dollars of student spending in date range (INCLUSIVE)
+    },...
+]
+```
+OR
+CSV file with name "YYYYMMDD-YYYYMMDD_medium_report.csv"
+
+Failure Response : Status `400` Bad Request and errcode in response:
+* 'MISSING_PARAMS' when start or end date missing
+
+### Get full detail expense report
+`GET`, /expense/full
+
+Request: 
+?start={STRING} as YYYYMMDD
+&end={STRING} as YYYYMMDD
+
+Optional:
+&csv={STRING} as "true"
+
+Success Response : Status `200` and JSON:
+```
+[
+    {
+        "group_id": {INT},
+        "total": {DECIMAL} dollars of group spending in date range (INCLUSIVE),
+        "net_id": {STRING},
+        "student_total": {DECIMAL} dollars of student spending in date range (INCLUSIVE),
+        "part_id": {INT},
+        "quantity_purchased*cost_per_unit": {DECIMAL}},
+        "quantity_purchased": {INT},
+        "cost_per_unit": {DECIMAL},
+        "date": ex"2021-02-02 02:02:02.002"
+    }
+    },...
+]
+```
+OR
+CSV file with name "YYYYMMDD-YYYYMMDD_full_report.csv"
+
+Failure Response : Status `400` Bad Request and errcode in response:
+* 'MISSING_PARAMS' when start or end date missing
+
+
+
+
