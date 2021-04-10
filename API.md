@@ -57,15 +57,19 @@ Failure Response : Status `400` Bad Request and errcode in response:
 * 'NEGATIVE_COST'
 
 ### Upload a sheet of parts
-`POST`, /inventory/parts/insert
+`POST`, /inventory/parts/upload
 
 Request: JSON:
 ```
-??
+[
+{"part_id": {},"name":{STRING},"current_cost":{},"quantity_available":{INT}},
+{"part_id": {},"name":{STRING},"current_cost":{},"quantity_available":{INT}},
+]
 ```
 Success Response : Status `200`
 
 Failure Response : Status `400` Bad Request and JSON in response:
+```
 {
     "conflictinserts": {
         "old": [
@@ -94,6 +98,7 @@ Failure Response : Status `400` Bad Request and JSON in response:
         }
     ]
 }
+```
 
 ### Buy a cart of parts
 `POST`, /inventory/parts/buy
@@ -213,6 +218,44 @@ Success Response : Status `200`
 
 Failure Response : Status `400` Bad Request and errcode in response:
 * 'ER\_DUP\_ENTRY' when tool_id is not unique
+
+### Upload a sheet of tools
+`POST`, /inventory/tools/upload
+
+Request: JSON:
+```
+[
+{"part_id": {},"name":{STRING}},
+{"part_id": {},"name":{STRING},"current_cost":{},"quantity_available":{INT}},
+]
+```
+Success Response : Status `200`
+
+Failure Response : Status `400` Bad Request and JSON in response:
+```
+{
+    "conflictinserts": {
+        "old": [
+            {
+                "part_id": {},
+                "name": {STRING},
+            }
+        ],
+        "new": [
+            {
+                "part_id": {},
+                "name": {STRING},
+            }
+        ]
+    },
+    "failedinserts": [
+        {
+            "part_id": {},
+            "name": {STRING},
+        }
+    ]
+}
+```
 
 ### Rent a cart of tools
 `POST`, /inventory/tools/rent/
@@ -350,6 +393,54 @@ CSV file with name "YYYYMMDD-YYYYMMDD_full_report.csv"
 Failure Response : Status `400` Bad Request and errcode in response:
 * 'MISSING_PARAMS' when start or end date missing
 
+## Students and Groups
+### Upload a sheet of Students and Groups
+`POST`, /students/upload
 
+Request: JSON:
+```
 
+```
+Success Response : Status `200`
 
+Failure Response : Status `400` Bad Request and JSON in response:
+```
+{
+    "conflictgroups": [
+        {
+            
+        }
+    ],
+    "failedinserts": [
+        {
+            
+        }
+    ]
+    "conflictinserts": {
+        "old": [
+            {
+                "part_id": {},
+                "name": {STRING},
+                "quantity_available": {},
+                "current_cost:": {}
+            }
+        ],
+        "new": [
+            {
+                "part_id": {},
+                "name": {STRING},
+                "quantity_available": {},
+                "current_cost:": {}
+            }
+        ]
+    },
+    "failedinserts": [
+        {
+            "part_id": {},
+            "name": {STRING},
+            "quantity_available": {},
+            "current_cost:": {}
+        }
+    ]
+}
+```
