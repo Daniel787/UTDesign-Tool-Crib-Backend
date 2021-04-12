@@ -18,7 +18,7 @@ router.get("/",(req,res) => {
 router.get("/detailed",(req,res) => {
 
   myquery=
-  "SELECT * FROM "
+  "SELECT s.*, u.tool_id, u.status, u.checkout_date, u.due_date FROM "
   +"(SELECT ghs.group_id, ghs.net_id, s.name, s.email, s.utd_id, s.student_hold from mydb.group_has_student ghs, mydb.student s "
   +"WHERE ghs.net_id = s.net_id "
   +"ORDER BY ghs.group_id, ghs.net_id) s "
