@@ -60,7 +60,9 @@ router.post("/insert", (req, res) => {
         quantity_available: req.body.quantity_available,
         current_cost: req.body.current_cost
     });
-
+    if (req.body.part_id < 0) {
+        res.status(400).send('DELETED_PART')
+    }
     if (req.body.quantity_available < 0) {
         res.status(400).send('NEGATIVE_QUANTITY')
     }
@@ -119,6 +121,9 @@ router.post("/modify", (req, res) => {
             quantity_available: req.body.quantity_available,
             current_cost: req.body.current_cost
         });
+        if (req.body.part_id < 0) {
+            res.status(400).send('DELETED_PART')
+        }
 
         queries.push(pool2.query(query[0], query[1]));
 
@@ -221,10 +226,29 @@ router.post("/delete", (req, res) => {
 router.post("/buy", (req, res) => {
     (async function sendquery(param) {
         queries = []
+        status=200;
 
-        //NEED TO CHECK AND MAKE ERRORS FOR (net_id, group_id) pair existing in DB
+        //CHECK: does the 
+        queries = []
+        var pool2 = pool.promise();
+        var query = toUnnamed("SELECT * FROM mydb.Group_has_student ghs WHERE ghs.net_id= :id AND ghs.group_id = :group_id", {
+            id: req.body.cart[i].item.net_id,
+            group_id: req.body.customer.group_id
+        });
+        queries.push(pool2.query(query[0], query[1]));
+
+        var results = await Promise.all(queries);
+        results.forEach(([rows, fields]) => { if (rows.length != 0) { status=400; console.log("The student,group pair already exissts"); } });
+
+        if(status=400){
+            return res.status(400).send("STUDENT_GROUP_MISMATCH");
+        }
 
         for (i = 0; i < req.body.cart.length; i++) {
+            if(req.body.cart[i].item.part_id < 0){
+                return res.status(400).send("DELETED_PART");
+            }
+
             var query = toUnnamed(
                 "SELECT part_id, (current_cost = :purchased_cost) cost_matches, ((quantity_available - :quantity_purchased) >= 0) enough_stock "
                 + "FROM inventory_part WHERE part_id = :part_id;", {
@@ -270,7 +294,7 @@ router.post("/buy", (req, res) => {
             console.log(error);
             res.status(500).send(error.code);
         });
-        res.send();
+        res.status(200).send("SUCCESS");
     })();
 });
 
@@ -293,6 +317,10 @@ router.post("/upload", (req, res) => {
             var name = req.body[i].name
             var cost = req.body[i].current_cost
             var quantity = req.body[i].quantity_available
+
+            if(id < 0){
+                return res.status(400).send("DELETED_PART");
+            }
 
             //console.log("name: " + name+"    email: " + email+"     id: " + id)
             //this check fails, but it isn't technically necessary, the insert will just fail
