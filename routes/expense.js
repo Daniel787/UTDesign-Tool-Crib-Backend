@@ -15,8 +15,6 @@ router.get("/simple", (req, res) => {
     return res.status(400).send("MISSING_PARAMS");
   }
 
-  console.log(req.query.start)
-  console.log(req.query.end)
   var query = toUnnamed(
     "SELECT t.group_id `group_id`, SUM(pp.purchased_cost * pp.quantity_purchased) `total` "
     + "FROM "

@@ -28,12 +28,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 var rootRouter = require('./routes/root');
 var inventoryRouter = require('./routes/inventory');
 var studentRouter = require('./routes/student');
-var groupRouter = require('./routes/group');
+var groupRouter = require('./routes/groups');
 var expenseRouter = require('./routes/expense');
 app.use('/', rootRouter);
 app.use('/inventory', inventoryRouter);
 app.use('/student', studentRouter);
-app.use('/group', groupRouter);
+app.use('/groups', groupRouter);
 app.use('/expense', expenseRouter);
 
 // catch 404 and forward to error handler
