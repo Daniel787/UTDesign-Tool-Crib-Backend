@@ -10,6 +10,24 @@ var csv = require('express-csv');
 var pool = require("../db.js");
 var pool2 = pool.promise();
 
+function validate(id, name, quantity, cost) {
+    //check if valid id
+    /*if(isNaN(id)){
+      return -1;
+    }
+    if(!isNaN(name)){ //assuming every name has at least one letter
+      return -1;
+    }
+    if(!isNaN(quantity) || ! quantity.isInteger()){ //quantities must be whole
+        return -1;
+    }
+    var regex=/^[0-9]\d*(((,\d{3}){1})?(\.\d{0,2})?)$/;
+    if(!isNaN(cost) || ! regex.test(cost)){ //valid money format
+        return -1;
+    }*/
+    return 1;
+}
+
 //i.e. http://localhost:port/inventory/parts
 router.get("/", (req, res) => {
 

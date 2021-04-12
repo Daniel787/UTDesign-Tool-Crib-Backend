@@ -11,12 +11,12 @@ var pool = require("../db.js");
 
 function validate(id, name) {
   //check if valid id
-  if(isNaN(id)){
+  /*if(isNaN(id)){
     return -1;
   }
   if(!isNaN(name)){ //assuming every name has at least one letter
     return -1;
-  }
+  }*/
   return 1;
 }
 
@@ -146,6 +146,10 @@ router.get("/search", (req, res) => {
 });
 
 router.post("/modify", (req, res) => {
+  if(validate(tool_id, req.body.name) == -1){
+    return res.status(400).send("BAD_DATATYPES");
+  }; 
+
   if(req.body.tool_id < 0){
     return res.status(400).send("DELETED_TOOL");
   }
@@ -357,6 +361,10 @@ job.start();
 */
 
 router.post("/insert", (req, res) => {
+  if(validate(req.body.tool_id, req.body.name) == -1){
+    return res.status(400).send("BAD_DATATYPES");
+  }; 
+
   if(req.body.tool_id < 0){
     return res.status(400).send("DELETED_TOOL");
   }
