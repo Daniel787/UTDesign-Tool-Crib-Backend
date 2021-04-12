@@ -18,14 +18,14 @@ router.get("/", (req, res) => {
     + "  SELECT rtr.tool_id tool_id, 'Rented' status, t.group_id group_id, t.net_id net_id, t.date checkout_date, "
     + "  (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date "
     + "  FROM mydb.transaction t , mydb.rented_tool rtr "
-    + "  WHERE (t.transaction_id = rtr.transaction_id) "
+    + "  WHERE (t.transaction_id = rtr.transaction_id) AND rtr.tool_id>0"
     + "    AND (rtr.returned_date IS NULL) "
     + "    AND NOW() <= (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) "
     + "  UNION "
     + "  SELECT rto.tool_id, 'Overdue' status, t.group_id group_id, t.net_id net_id, t.date checkout_date, "
     + "  (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date "
     + "  FROM mydb.transaction t , mydb.rented_tool rto "
-    + "  WHERE (t.transaction_id = rto.transaction_id) "
+    + "  WHERE (t.transaction_id = rto.transaction_id) AND rto.tool_id>0"
     + "    AND (rto.returned_date IS NULL)  "
     + "    AND NOW() > (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3)))  "
     + "  UNION "
@@ -34,7 +34,7 @@ router.get("/", (req, res) => {
     + "  WHERE rta.tool_id  "
     + "    NOT IN (SELECT rt.tool_id "
     + "      FROM mydb.transaction t, mydb.rented_tool rt "
-    + "      WHERE (t.transaction_id = rt.transaction_id) "
+    + "      WHERE (t.transaction_id = rt.transaction_id) AND rt.tool_id > 0 "
     + "        AND(rt.returned_date IS NULL) "
     + "      ORDER BY REVERSE (t.date)) "
     + ") u;"
@@ -48,6 +48,10 @@ router.get("/", (req, res) => {
 router.get("/search", (req, res) => {
   //set query by arguments 'tool_id' or 'name'
   if (req.query.tool_id) {
+    if(req.query.tool_id < 0){
+      return res.status(400).send("DELETED_TOOL");
+    }
+
     var myquery = toUnnamed(
       "SELECT * FROM mydb.rental_tool "
       + "natural join "
@@ -124,6 +128,10 @@ router.get("/search", (req, res) => {
 });
 
 router.post("/modify", (req, res) => {
+  if(req.body.tool_id < 0){
+    return res.status(400).send("DELETED_TOOL");
+  }
+
   (async function sendquery(param) {
     var pool2 = pool.promise();
     queries = []
@@ -328,6 +336,10 @@ job.start();
 */
 
 router.post("/insert", (req, res) => {
+  if(req.body.tool_id < 0){
+    return res.status(400).send("DELETED_TOOL");
+  }
+
   var query = toUnnamed("INSERT into mydb.rental_tool VALUES(:tool_id, :name)", {
     tool_id: req.body.tool_id,
     name: req.body.name,
@@ -342,7 +354,7 @@ router.post("/insert", (req, res) => {
   })
 });
 
-//i.e. http://localhost:port/inventory
+//Note: this route is currently not used or called.
 router.post("/insertMultiple", (req, res) => {
   console.log("IN HERE");
   (async function sendquery(param) {
@@ -371,15 +383,13 @@ router.post("/upload", (req, res) => {
   var failedinserts = []
   var duplicateinserts = []
 
-  readXlsxFile('SampleToolsSheet.xlsx').then((rows) => {
-
     var i, j;
     var status = 200;
     (async function sendquery(param) {
-      for (i = 1; i < rows.length; i++) {
+      for (i = 1; i < req.body.length; i++) {
         //get name, email, id
-        var id = rows[i][0]
-        var name = rows[i][1]
+        var id = req.body[i].tool_id
+        var name = req.body[i].name
 
         //console.log("name: " + name+"    email: " + email+"     id: " + id)
         //this check fails, but it isn't technically necessary, the insert will just fail
@@ -433,7 +443,6 @@ router.post("/upload", (req, res) => {
 
 
     })();
-  })
 });
 
 
@@ -473,6 +482,10 @@ router.post("/rent", (req, res) => {
 
     console.log("Part 2- check if out");
     for (i = 0; i < req.body.cart.length; i++) {
+      if(req.body.cart[i].item.tool_id < 0){
+        return res.status(400).send("DELETED_TOOL");
+      }
+
       var query = toUnnamed(
         "SELECT transaction_id FROM rented_tool where (tool_id = :tool_id AND returned_date is NULL)", {
         //"SELECT 1 from mydb.rented_tool where tool_id = :tool_id AND returned_date=NULL", {
@@ -575,6 +588,10 @@ router.post("/rent", (req, res) => {
 //i.e. http://localhost:port/inventory/tools/return?tool_id=111
 router.post("/return", (req, res) => {
   console.log("entered return rent route");
+  if(req.query.tool_id < 0){
+    return res.status(400).send("DELETED_TOOL");
+  }
+
   (async function sendquery(param) {
     var id = req.query.tool_id;
     queries = []
