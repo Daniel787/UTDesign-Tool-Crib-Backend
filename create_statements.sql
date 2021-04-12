@@ -253,8 +253,7 @@ insert into mydb.group_has_student (group_id, net_id) VALUES
 insert into mydb.rental_tool (tool_id, name) VALUES
 (111, "hammer"),
 (222, "screwdriver"),
-(333, "drill"),
-(444, "iron");
+(333, "drill");
 
 insert into mydb.transaction (transaction_id, group_id, net_id, date, type) values
 (1,  24, 'abc180002', '2021-02-13T08:34:09', 'rental'),
@@ -272,8 +271,7 @@ insert into mydb.rented_tool (transaction_id, tool_id, returned_date, notificati
 (4, 333, '2021-02-18T06:00:00', false),
 (5, 333, '2021-02-18T08:00:00', false),
 (6, 222, '2021-02-19T07:00:00', false),
-(7, 222, null,                  false),
-(7, 444, null,                  false);
+(7, 222, null,                  false);
 
 
 insert into mydb.transaction (transaction_id, group_id, net_id, date, type) values
@@ -295,7 +293,3 @@ insert into mydb.purchased_part (transaction_id, part_id, quantity_purchased, pu
 (81, 12345, 7, .01),
 (82, 35791, 2, .5),
 (83, 56789, 1, 12);
-
-update mydb.transaction 
-set date = NOW()  
-where transaction_id = UUID_TO_BIN(37000000000000000000000000000000);
