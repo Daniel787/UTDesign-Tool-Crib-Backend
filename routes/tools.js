@@ -159,7 +159,7 @@ router.post("/modify", (req, res) => {
 
 //multiplies all instances of the id in the database by -1
 router.post("/delete", (req, res) => {
-  var tool_id = req.query.id;
+  var tool_id = req.query.tool_id;
   console.log("Tool to delete: ", tool_id);
 
   (async function sendquery(param) {
@@ -421,12 +421,16 @@ router.post("/upload", (req, res) => {
         }//async
       }//outer loop
 
+      var myjson = ""
+      myjson = { "conflictinserts": { "old": oldtuples, "new": newtuples }, "failedinserts": failedinserts }
+
       if (status == 400) {
-        return res.status(status).json("duplicate parts: " + duplicateinserts + "          failed parts: " + failedinserts);
+          return res.status(status).json(myjson);
       }
       else {
-        return res.status(status).send("SUCCESS");
+          return res.status(status).send("SUCCESS");
       }
+
 
     })();
   })

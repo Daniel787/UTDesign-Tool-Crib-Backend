@@ -13,7 +13,7 @@ var pool2 = pool.promise();
 //i.e. http://localhost:port/inventory/parts
 router.get("/", (req, res) => {
 
-    myquery = "SELECT * FROM mydb.inventory_part"
+    myquery = "SELECT * FROM mydb.inventory_part WHERE part_id > 0"
     pool.query(myquery, function (err, rows, fields) {
         if (err) console.log(err)
 
@@ -147,7 +147,7 @@ router.post("/modify", (req, res) => {
 });
 
 router.post("/delete", (req, res) => {
-    var part_id = req.query.id;
+    var part_id = req.query.part_id;
     console.log("Part to delete: ", part_id);
   
     (async function sendquery(param) {
@@ -282,6 +282,8 @@ router.post("/upload", (req, res) => {
     var newtuples = []
     var oldtuples = []
 
+    console.log(req.body)
+
     var i, j;
     var status = 200;
     (async function sendquery(param) {
@@ -294,9 +296,10 @@ router.post("/upload", (req, res) => {
 
             //console.log("name: " + name+"    email: " + email+"     id: " + id)
             //this check fails, but it isn't technically necessary, the insert will just fail
-            if (id == null || name == null || cost == null || quantity == null) {
+            if (id == null || name == null || cost == null || quantity == null || id == '' || name == '' || cost == '' || quantity == ''  ) {
                 console.log("part " + i + " has a null field, skipping...")
                 failedinserts.push({ "part_id": id, "name": name, "quantity_available": quantity, "current_cost:": cost });
+                status=400;
             }
             else {
                 console.log("id: " + id + "    name: " + name)
