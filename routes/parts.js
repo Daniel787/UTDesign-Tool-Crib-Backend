@@ -306,7 +306,9 @@ router.post("/upload", (req, res) => {
     var newtuples = []
     var oldtuples = []
 
+    var numrows=0, numduplicate=0, numsuccess=0, numfailed =0 ;
     console.log(req.body)
+    numrows= req.body.length;
 
     var i, j;
     var status = 200;
@@ -351,6 +353,7 @@ router.post("/upload", (req, res) => {
                     if (rows.length == 1) {  //should be only 1, not 2
                         console.log("That part exists, and is entirely identical to one in the database. Will not be inserted.")
                         newPart = 0
+                        numduplicate=numduplicate +1;
                     }
                 });
 
@@ -373,8 +376,8 @@ router.post("/upload", (req, res) => {
                 results.forEach(([rows, fields]) => {
                     if (rows.length == 1) {
                         console.log("ROWS: " + rows[0].current_cost)
-                        oldtuples.push({ "part_id": rows[0].part_id, "name": rows[0].name, "quantity_available": rows[0].quantity_available, "current_cost:": parseFloat(rows[0].current_cost) })
-                        newtuples.push({ "part_id": parseInt(id), "name": name, "quantity_available": parseInt(quantity), "current_cost:": parseFloat(cost) })
+                        oldtuples.push({ "part_id": rows[0].part_id, "name": rows[0].name, "quantity_available": rows[0].quantity_available, "current_cost": parseFloat(rows[0].current_cost) })
+                        newtuples.push({ "part_id": parseInt(id), "name": name, "quantity_available": parseInt(quantity), "current_cost": parseFloat(cost) })
                         console.log("That part exists, but you have supplied different values for one of the attributes");
                         console.log("oldtuple" + oldtuples)
                         console.log("newtuple" + newtuples)
@@ -401,21 +404,24 @@ router.post("/upload", (req, res) => {
                     //console.log("NUMQUERIES: " + queries.length);
                     //later: change error msg to be which part and why
                     const results = await Promise.all(queries).catch(() => {
-                        console.log("One of the tools failed to insert."); status = 400;
-                        failedinserts.push({ "part_id": id, "name": name, "quantity_available": quantity, "current_cost:": cost })
+                        console.log("One of the tools failed to insert."); status = 400; 
+                        failedinserts.push({ "part_id": id, "name": name, "quantity_available": quantity, "current_cost": cost })
                     });
                 }
             }//async
         }//outer loop
 
+        numfailed = conflictinserts.length + failedinserts.length
+        numsuccess= numrows- (numduplicate + numfailed)
         var myjson = ""
-        myjson = { "conflictinserts": { "old": oldtuples, "new": newtuples }, "failedinserts": failedinserts }
+        myjson = { "conflictinserts": { "old": oldtuples, "new": newtuples }, "failedinserts": failedinserts,
+                    "numtotal": numrows, "numduplicate": numduplicate, "numsuccess": numsuccess, "numfailed": numfailed}
 
         if (status == 400) {
-            return res.status(status).json(myjson);
+            return res.json(myjson);
         }
         else {
-            return res.status(status).send("SUCCESS");
+            return res.send("SUCCESS");
         }
 
 

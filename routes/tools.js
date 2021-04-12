@@ -9,6 +9,17 @@ var nodemailer = require('nodemailer')
 //sql connection
 var pool = require("../db.js");
 
+function validate(id, name) {
+  //check if valid id
+  if(isNaN(id)){
+    return -1;
+  }
+  if(!isNaN(name)){ //assuming every name has at least one letter
+    return -1;
+  }
+  return 1;
+}
+
 //i.e. http://localhost:port/inventory/tools
 router.get("/", (req, res) => {
   myquery =
@@ -18,14 +29,14 @@ router.get("/", (req, res) => {
     + "  SELECT rtr.tool_id tool_id, 'Rented' status, t.group_id group_id, t.net_id net_id, t.date checkout_date, "
     + "  (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date "
     + "  FROM mydb.transaction t , mydb.rented_tool rtr "
-    + "  WHERE (t.transaction_id = rtr.transaction_id) AND rtr.tool_id>0"
+    + "  WHERE (t.transaction_id = rtr.transaction_id)"
     + "    AND (rtr.returned_date IS NULL) "
     + "    AND NOW() <= (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) "
     + "  UNION "
     + "  SELECT rto.tool_id, 'Overdue' status, t.group_id group_id, t.net_id net_id, t.date checkout_date, "
     + "  (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date "
     + "  FROM mydb.transaction t , mydb.rented_tool rto "
-    + "  WHERE (t.transaction_id = rto.transaction_id) AND rto.tool_id>0"
+    + "  WHERE (t.transaction_id = rto.transaction_id)"
     + "    AND (rto.returned_date IS NULL)  "
     + "    AND NOW() > (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3)))  "
     + "  UNION "
@@ -34,12 +45,19 @@ router.get("/", (req, res) => {
     + "  WHERE rta.tool_id  "
     + "    NOT IN (SELECT rt.tool_id "
     + "      FROM mydb.transaction t, mydb.rented_tool rt "
-    + "      WHERE (t.transaction_id = rt.transaction_id) AND rt.tool_id > 0 "
+    + "      WHERE (t.transaction_id = rt.transaction_id) "
     + "        AND(rt.returned_date IS NULL) "
     + "      ORDER BY REVERSE (t.date)) "
     + ") u;"
   pool.query(myquery, function (err, rows, fields) {
     if (err) console.log(err);
+    for(var i=0; i < rows.length; i++){
+      console.log(rows[i])
+      if(rows[i].tool_id < 0){ //I don't know how to modify the query so I'm doing it this way
+        console.log("not returning this")
+        rows.splice(i, 1)
+      }
+    }
     res.json(rows);
   });
 });
@@ -168,6 +186,9 @@ router.post("/modify", (req, res) => {
 //multiplies all instances of the id in the database by -1
 router.post("/delete", (req, res) => {
   var tool_id = req.query.tool_id;
+  if(validate(tool_id, " ") == -1){
+    return res.status(400).send("BAD_DATATYPES");
+  }; 
   console.log("Tool to delete: ", tool_id);
 
   (async function sendquery(param) {
@@ -381,19 +402,27 @@ router.post("/insertMultiple", (req, res) => {
 
 router.post("/upload", (req, res) => {
   var failedinserts = []
-  var duplicateinserts = []
+  var conflictinserts = []
+  var newtuples = []
+  var oldtuples = []
 
     var i, j;
     var status = 200;
+    var numrows=0, numduplicate=0, numsuccess=0, numfailed =0 ;
+    numrows= req.body.length;
     (async function sendquery(param) {
-      for (i = 1; i < req.body.length; i++) {
+      for (i = 0; i < req.body.length; i++) {
         //get name, email, id
         var id = req.body[i].tool_id
         var name = req.body[i].name
 
+        if(validate(id, name) == -1){
+          return res.status(400).send("BAD_DATATYPES");
+        }; //perform data-type checks
+
         //console.log("name: " + name+"    email: " + email+"     id: " + id)
         //this check fails, but it isn't technically necessary, the insert will just fail
-        if (id == null || name == null) {
+        if (id == null || name == null || id == '' || name == '') {
           console.log("tool " + i + " has a null field, skipping...")
         }
         else {
@@ -402,15 +431,41 @@ router.post("/upload", (req, res) => {
           queries = []
 
           var pool2 = pool.promise();
-          var query = toUnnamed("SELECT * FROM mydb.rental_tool r WHERE r.tool_id = :tool_id", {
-            tool_id: id
+          var query = toUnnamed("SELECT * FROM mydb.rental_tool r WHERE r.tool_id = :tool_id AND r.name = :name", {
+            tool_id: id,
+            name: name
           });
           queries.push(pool2.query(query[0], query[1]));
 
           var newTool = 1
           var results = await Promise.all(queries);
-          results.forEach(([rows, fields]) => { console.log("ROWS" + rows) });
-          results.forEach(([rows, fields]) => { if (rows.length != 0) { console.log("That tool exists"); status = 400; newTool = 0; duplicateinserts.push(name) } });
+          //results.forEach(([rows, fields]) => { console.log("ROWS" + rows) });
+          results.forEach(([rows, fields]) => { 
+            if (rows.length != 0) { 
+              console.log("That tool exists, and is entirely identical to one in the database. Will not insert"); 
+              newTool = 0; 
+              numduplicate= numduplicate +1; 
+            } 
+          });
+          queries = []
+            var query = toUnnamed("SELECT * FROM mydb.rental_tool r WHERE r.tool_id = :tool_id AND r.name <> :name", {
+              tool_id: id,
+              name: name
+            });
+            queries.push(pool2.query(query[0], query[1]));
+  
+            var results = await Promise.all(queries);
+            //results.forEach(([rows, fields]) => { console.log("ROWS: " + rows) });
+            results.forEach(([rows, fields]) => { 
+              if (rows.length != 0) { 
+                 console.log("ROWS:", rows)
+                console.log("That tool exists, but you have supplied a different value for its name. Will not insert");                
+                oldtuples.push({ "tool_id": rows[0].tool_id, "name": rows[0].name})
+                newtuples.push({ "tool_id": parseInt(id), "name": name })
+                status = 400;
+                newTool = 0;
+                conflictinserts.push([oldtuples, newtuples]) 
+              } });
 
           if (newTool) {
             console.log("Attempting to insert a tool...");
@@ -426,13 +481,16 @@ router.post("/upload", (req, res) => {
 
             //console.log("NUMQUERIES: " + queries.length);
             //later: change error msg to be which part and why
-            const results = await Promise.all(queries).catch(() => { console.log("One of the tools failed to insert."); status = 412; failedinserts.push(name) });
+            const results = await Promise.all(queries).catch(() => { console.log("One of the tools failed to insert."); status = 400; failedinserts.push(name) });
           }
         }//async
       }//outer loop
 
+      numfailed = conflictinserts.length + failedinserts.length
+      numsuccess= numrows- (numduplicate + numfailed)
       var myjson = ""
-      myjson = { "conflictinserts": { "old": oldtuples, "new": newtuples }, "failedinserts": failedinserts }
+      myjson = { "conflictinserts": { "old": oldtuples, "new": newtuples }, "failedinserts": failedinserts,
+      "numtotal": numrows, "numduplicate": numduplicate, "numsuccess": numsuccess, "numfailed": numfailed}
 
       if (status == 400) {
           return res.status(status).json(myjson);
@@ -455,12 +513,17 @@ router.post("/rent", (req, res) => {
 
     for (i = 0; i < req.body.cart.length; i++) {
       //CHECK: does the student have a hold?
+
+      if(validate(req.body.cart[i].item.tool_id, " ") == -1){
+        return res.status(400).send("BAD_DATATYPES");
+      }; 
+
       var query = toUnnamed(
         "SELECT * FROM mydb.student WHERE student_hold = true AND net_id= :student_id", {
         tool_id: req.body.cart[i].item.tool_id,
         student_id: req.body.customer.net_id
       });
-
+      
       queries.push(pool2.query(query[0], query[1]));
     }
 
@@ -587,6 +650,10 @@ router.post("/rent", (req, res) => {
 //you can return multiple items at once
 //i.e. http://localhost:port/inventory/tools/return?tool_id=111
 router.post("/return", (req, res) => {
+  if(validate(req.query.tool_id, " ") == -1){
+    return res.status(400).send("BAD_DATATYPES");
+  }; 
+
   console.log("entered return rent route");
   if(req.query.tool_id < 0){
     return res.status(400).send("DELETED_TOOL");
