@@ -119,10 +119,10 @@ router.post("/insertMultiple", (req, res) => {
         console.log("NUMQUERIES: " + queries.length);
         var status = 200;
         var results = await Promise.all(queries).catch(() => { console.log("One of the tools failed to insert."); status = 400; });
-        if(status == 400){
+        if (status == 400) {
             return res.status(status).send("SQL_ERROR");
         }
-        else{
+        else {
             return res.status(status).send("SUCCESS")
         }
     })();
@@ -172,45 +172,45 @@ router.post("/modify", (req, res) => {
 router.post("/delete", (req, res) => {
     var part_id = req.query.part_id;
     console.log("Part to delete: ", part_id);
-  
+
     (async function sendquery(param) {
-      var pool2 = pool.promise();
-      queries = []
-  
-      var query = toUnnamed("SELECT * FROM mydb.inventory_part WHERE part_id = :part_id", {
-        part_id: part_id
-      });
-  
-      queries.push(pool2.query(query[0], query[1]));
-  
-      var status = 200;
-      var results = await Promise.all(queries);
-      results.forEach(([rows, fields]) => { if (rows.length == 0) { console.log("No part with that ID"); status = 400; } });
-      if (status == 400) {
-        return res.status(status).send("INVALID_ID");
-      }
-  
-      console.log("down here")
-      queries = []
-      var query = toUnnamed("SET FOREIGN_KEY_CHECKS=0;" 
-                            +" UPDATE `mydb`.`Inventory_Part` SET `part_id` = :part_id * -1 WHERE (`part_id` = :part_id);"
-                            + "UPDATE `mydb`.`Purchased_Part` SET `part_id` = :part_id * -1 WHERE (`part_id` = :part_id);"
-                            + "SET FOREIGN_KEY_CHECKS=1; ", {
-        part_id: part_id,
-      });
-  
-      queries.push(pool2.query(query[0], query[1]));
-  
-      var status = 200;
-      var results = await Promise.all(queries).catch(() => { console.log("Deletion failed."); status = 400; });
-      if(status == 400){
-          return res.status(status).send("SQL_ERROR");
-      }
-      else{
-          return res.status(status).send("SUCCESS")
-      }
+        var pool2 = pool.promise();
+        queries = []
+
+        var query = toUnnamed("SELECT * FROM mydb.inventory_part WHERE part_id = :part_id", {
+            part_id: part_id
+        });
+
+        queries.push(pool2.query(query[0], query[1]));
+
+        var status = 200;
+        var results = await Promise.all(queries);
+        results.forEach(([rows, fields]) => { if (rows.length == 0) { console.log("No part with that ID"); status = 400; } });
+        if (status == 400) {
+            return res.status(status).send("INVALID_ID");
+        }
+
+        console.log("down here")
+        queries = []
+        var query = toUnnamed("SET FOREIGN_KEY_CHECKS=0;"
+            + " UPDATE `mydb`.`Inventory_Part` SET `part_id` = :part_id * -1 WHERE (`part_id` = :part_id);"
+            + "UPDATE `mydb`.`Purchased_Part` SET `part_id` = :part_id * -1 WHERE (`part_id` = :part_id);"
+            + "SET FOREIGN_KEY_CHECKS=1; ", {
+            part_id: part_id,
+        });
+
+        queries.push(pool2.query(query[0], query[1]));
+
+        var status = 200;
+        var results = await Promise.all(queries).catch(() => { console.log("Deletion failed."); status = 400; });
+        if (status == 400) {
+            return res.status(status).send("SQL_ERROR");
+        }
+        else {
+            return res.status(status).send("SUCCESS")
+        }
     })();
-  });
+});
 
 
 //http://localhost:3500/inventory/buy
@@ -244,7 +244,7 @@ router.post("/delete", (req, res) => {
 router.post("/buy", (req, res) => {
     (async function sendquery(param) {
         queries = []
-        status=200;
+        status = 200;
 
         //CHECK: does the 
         queries = []
@@ -256,14 +256,14 @@ router.post("/buy", (req, res) => {
         queries.push(pool2.query(query[0], query[1]));
 
         var results = await Promise.all(queries);
-        results.forEach(([rows, fields]) => { if (rows.length != 0) { status=400; console.log("The student,group pair already exissts"); } });
+        results.forEach(([rows, fields]) => { if (rows.length != 0) { status = 400; console.log("The student,group pair already exissts"); } });
 
-        if(status=400){
+        if (status = 400) {
             return res.status(400).send("STUDENT_GROUP_MISMATCH");
         }
 
         for (i = 0; i < req.body.cart.length; i++) {
-            if(req.body.cart[i].item.part_id < 0){
+            if (req.body.cart[i].item.part_id < 0) {
                 return res.status(400).send("DELETED_PART");
             }
 
@@ -324,9 +324,9 @@ router.post("/upload", (req, res) => {
     var newtuples = []
     var oldtuples = []
 
-    var numrows=0, numduplicate=0, numsuccess=0, numfailed =0 ;
+    var numrows = 0, numduplicate = 0, numsuccess = 0, numfailed = 0;
     console.log(req.body)
-    numrows= req.body.length;
+    numrows = req.body.length;
 
     var i, j;
     var status = 200;
@@ -338,16 +338,16 @@ router.post("/upload", (req, res) => {
             var cost = req.body[i].current_cost
             var quantity = req.body[i].quantity_available
 
-            if(id < 0){
+            if (id < 0) {
                 return res.status(400).send("DELETED_PART");
             }
 
             //console.log("name: " + name+"    email: " + email+"     id: " + id)
             //this check fails, but it isn't technically necessary, the insert will just fail
-            if (id == null || name == null || cost == null || quantity == null || id == '' || name == '' || cost == '' || quantity == ''  ) {
+            if (id == null || name == null || cost == null || quantity == null || id == '' || name == '' || cost == '' || quantity == '') {
                 console.log("part " + i + " has a null field, skipping...")
-                failedinserts.push({ "part_id": id, "name": name, "quantity_available": quantity, "current_cost:": cost });
-                status=400;
+                failedinserts.push({ "part_id": id, "name": name, "quantity_available": quantity, "current_cost": cost });
+                status = 400;
             }
             else {
                 console.log("id: " + id + "    name: " + name)
@@ -371,7 +371,7 @@ router.post("/upload", (req, res) => {
                     if (rows.length == 1) {  //should be only 1, not 2
                         console.log("That part exists, and is entirely identical to one in the database. Will not be inserted.")
                         newPart = 0
-                        numduplicate=numduplicate +1;
+                        numduplicate = numduplicate + 1;
                     }
                 });
 
@@ -422,7 +422,7 @@ router.post("/upload", (req, res) => {
                     //console.log("NUMQUERIES: " + queries.length);
                     //later: change error msg to be which part and why
                     const results = await Promise.all(queries).catch(() => {
-                        console.log("One of the tools failed to insert."); status = 400; 
+                        console.log("One of the tools failed to insert."); status = 400;
                         failedinserts.push({ "part_id": id, "name": name, "quantity_available": quantity, "current_cost": cost })
                     });
                 }
@@ -430,10 +430,12 @@ router.post("/upload", (req, res) => {
         }//outer loop
 
         numfailed = conflictinserts.length + failedinserts.length
-        numsuccess= numrows- (numduplicate + numfailed)
+        numsuccess = numrows - (numduplicate + numfailed)
         var myjson = ""
-        myjson = { "conflictinserts": { "old": oldtuples, "new": newtuples }, "failedinserts": failedinserts,
-                    "numtotal": numrows, "numduplicate": numduplicate, "numsuccess": numsuccess, "numfailed": numfailed}
+        myjson = {
+            "conflictinserts": { "old": oldtuples, "new": newtuples }, "failedinserts": failedinserts,
+            "numtotal": numrows, "numduplicate": numduplicate, "numsuccess": numsuccess, "numfailed": numfailed
+        }
 
         if (status == 400) {
             return res.json(myjson);
