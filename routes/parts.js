@@ -10,27 +10,31 @@ var csv = require('express-csv');
 var pool = require("../db.js");
 var pool2 = pool.promise();
 
+//we use regex because testing for datatypes is unreliable when all string/some int
+validate(556, "aaa", 7, "0.122")
 function validate(id, name, quantity, cost) {
     //check if valid id
-    /*if(isNaN(id)){
-      return -1;
-    }
-    if(!isNaN(name)){ //assuming every name has at least one letter
-      return -1;
-    }
-    if(!isNaN(quantity) || ! quantity.isInteger()){ //quantities must be whole
+    var regex=/[0-9]/; //only 1-9
+    var letters=/[a-zA-Z]/
+    if(! regex.test(id) || letters.test(id)){
+        console.log("A")
         return -1;
     }
-    var regex=/^[0-9]\d*(((,\d{3}){1})?(\.\d{0,2})?)$/;
-    if(!isNaN(cost) || ! regex.test(cost)){ //valid money format
+    var regex= /^[^\.]*$/ //no periods
+    if(! regex.test(quantity) || letters.test(id)){ 
+        console.log("C")
         return -1;
-    }*/
+    }
+    var regex=/^[0-9]\d*(((,\d{3}){1})?(\.\d{0,2})?)$/ //valid money format
+    if(! regex.test(cost) || letters.test(id)){ 
+        console.log("D")
+        return -1;
+    }
     return 1;
 }
 
 //i.e. http://localhost:port/inventory/parts
 router.get("/", (req, res) => {
-
     myquery = "SELECT * FROM mydb.inventory_part WHERE part_id > 0"
     pool.query(myquery, function (err, rows, fields) {
         if (err) console.log(err)

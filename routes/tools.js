@@ -11,12 +11,12 @@ var pool = require("../db.js");
 
 function validate(id, name) {
   //check if valid id
-  /*if(isNaN(id)){
-    return -1;
+  var regex=/[0-9]/; //only 1-9
+  var letters=/[a-zA-Z]/
+  if(! regex.test(id) || letters.test(id)){
+      console.log("A")
+      return -1;
   }
-  if(!isNaN(name)){ //assuming every name has at least one letter
-    return -1;
-  }*/
   return 1;
 }
 
