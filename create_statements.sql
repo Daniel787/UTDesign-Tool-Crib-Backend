@@ -299,15 +299,15 @@ insert into mydb.transaction (transaction_id, group_id, net_id, date, type) valu
 (6, 357, 'bef180005', '2021-02-18T07:01:01', 'rental'),
 (7, 357, 'bgh180007', '2021-02-22T14:15:00', 'rental');
 
-insert into mydb.rented_tool (transaction_id, tool_id, returned_date, notification_sent) values
-(1, 111, '2021-02-13T10:05:00', false),
-(2, 222, '2021-02-13T10:05:00', false),
-(3, 111,  null,                 false),
-(4, 333, '2021-02-18T06:00:00', false),
-(5, 333, '2021-02-18T08:00:00', false),
-(6, 222, '2021-02-19T07:00:00', false),
-(7, 222, null,                  false),
-(7, 444, null,                  false);
+insert into mydb.rented_tool (transaction_id, tool_id, returned_date, notification_sent, hours_rented) values
+(1, 111, '2021-02-13T10:05:00', 2, false),
+(2, 222, '2021-02-13T10:05:00', 2, false),
+(3, 111,  null,                 2, false),
+(4, 333, '2021-02-18T06:00:00', 2, false),
+(5, 333, '2021-02-18T08:00:00', 24, false),
+(6, 222, '2021-02-19T07:00:00', 2, false),
+(7, 222, null,                  2, false),
+(7, 444, null,                  24, false);
 
 
 insert into mydb.transaction (transaction_id, group_id, net_id, date, type) values
