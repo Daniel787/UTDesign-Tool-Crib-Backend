@@ -75,64 +75,104 @@ router.get("/search", (req, res) => {
 });
 
 router.post("/insert", (req, res) => {
-    if( validate(req.body.part_id,req.body.name,req.body.quantity_available,req.body.current_cost)  == -1){
-        return res.status(400).send('BAD_DATATYPES')
-    }
+    var numduplicate = 0, numsuccess = 0, numfailed = 0;
 
-    var query = toUnnamed("INSERT into mydb.inventory_part VALUES(:part_id, :name, :quantity_available, :current_cost)", {
-        part_id: req.body.part_id,
-        name: req.body.name,
-        quantity_available: req.body.quantity_available,
-        current_cost: req.body.current_cost
-    });
-    if (req.body.part_id < 0) {
-        res.status(400).send('DELETED_PART')
-    }
-    if (req.body.quantity_available < 0) {
-        res.status(400).send('NEGATIVE_QUANTITY')
-    }
-    if (req.body.current_cost < 0) {
-        res.status(400).send('NEGATIVE_COST')
-    }
-
-    pool.query(query[0], query[1], function (err, rows, fields) {
-        if (err) {
-            console.log(err)
-            res.status(400).send(err.code)
-        }
-        res.send();
-    })
-});
-
-
-//this route is really never used...
-router.post("/insertMultiple", (req, res) => {
     (async function sendquery(param) {
-        queries = []
+        newtuples=[]
+        oldtuples=[]
+        conflictinserts=[]
+        failedinserts=[]
 
-        console.log("length: ")
-        console.log(req.body.cart.length)
-        for (i = 0; i < req.body.cart.length; i++) {
-            var query = toUnnamed("INSERT into mydb.inventory_part VALUES(:tool_id, :name, :quantity_avilable, :current_cost)", {
-                tool_id: req.body.cart[i].item.part_id,
-                name: req.body.cart[i].item.name,
-                quantity_available: req.body.cart[i].item.quantity_available,
-                current_cost: req.body.cart[i].item.current_cost
-            });
+        var id= req.body.part_id;
+        var name= req.body.name;
+        var quantity= req.body.quantity_available;
+        var cost= req.body.current_cost;
 
-            queries.push(pool2.query(query[0], query[1]));
+        var proceed=1;
+        //easy checks that don't require queries
+        if( (validate(id,name,quantity,cost)  == -1) || req.body.part_id < 0 || req.body.quantity_available < 0 || req.body.current_cost < 0){
+            proceed=0;
+            failedinserts.push({ "part_id": id, "name": name, "quantity_available": quantity, "current_cost": cost });
+            numfailed = numfailed+1;
+            var myjson = {
+                "conflictinserts": { "old": oldtuples, "new": newtuples }, "failedinserts": failedinserts,
+                "numtotal": 1, "numduplicate": numduplicate, "numsuccess": numsuccess, "numfailed": numfailed
+            }
+            return res.json(myjson);
         }
 
-        console.log("NUMQUERIES: " + queries.length);
-        var status = 200;
-        var results = await Promise.all(queries).catch(() => { console.log("One of the tools failed to insert."); status = 400; });
+        var pool2 = pool.promise();
+        var queries=[]
+        //we want to examine matching part id, but difference something else
+        var query = toUnnamed("SELECT * FROM mydb.inventory_part p WHERE p.part_id = :part_id AND (name <> :part_name OR"
+            + " current_cost <> :part_cost OR quantity_available <> :part_quantity)", {
+            part_id: id,
+            part_name: name,
+            part_cost: cost,
+            part_quantity: quantity
+        });
+        queries.push(pool2.query(query[0], query[1]));
+        var results = await Promise.all(queries);
+
+        results.forEach(([rows, fields]) => {
+            if (rows.length == 1) {
+                oldtuples.push({ "part_id": rows[0].part_id, "name": rows[0].name, "quantity_available": rows[0].quantity_available, "current_cost": parseFloat(rows[0].current_cost) })
+                newtuples.push({ "part_id": parseInt(id), "name": name, "quantity_available": parseInt(quantity), "current_cost": parseFloat(cost) })
+                console.log("That part exists, but you have supplied different values for one of the attributes");
+                console.log("oldtuple" + oldtuples)
+                console.log("newtuple" + newtuples)
+                status = 400;
+                proceed = 0;
+                conflictinserts.push([oldtuples, newtuples])
+            }
+        });
+
+        var queries=[]
+        var pool2 = pool.promise();
+        //matching everything
+        var query = toUnnamed("SELECT * FROM mydb.inventory_part p WHERE p.part_id = :part_id AND name = :part_name AND"
+            + " current_cost = :part_cost AND quantity_available = :part_quantity", {
+            part_id: id,
+            part_name: name,
+            part_cost: cost,
+            part_quantity: quantity
+        });
+        queries.push(pool2.query(query[0], query[1]));
+        var results = await Promise.all(queries);
+
+        results.forEach(([rows, fields]) => {
+            if (rows.length == 1) {
+                console.log("That part exists, and is entirely identical to one in the database. Will not be inserted.");
+                status = 400;
+                numduplicate = numduplicate +1;
+                proceed = 0;
+            }
+        });
+
+        if(proceed){
+            var queries = []
+            var query = toUnnamed("INSERT into mydb.inventory_part VALUES(:part_id, :name, :quantity_available, :current_cost)", {
+                part_id: req.body.part_id,
+                name: req.body.name,
+                quantity_available: req.body.quantity_available,
+                current_cost: req.body.current_cost
+            });
+            queries.push(pool2.query(query[0], query[1]));
+            await Promise.all(queries).catch(() => { console.log("Some sql error in insertion"); status = 400; numfailed=numfailed+1;});
+        }
+        numsuccess= 1-(oldtuples.length + failedinserts.length + numduplicate);
+        myjson = {
+            "conflictinserts": { "old": oldtuples, "new": newtuples }, "failedinserts": failedinserts,
+            "numtotal": 1, "numduplicate": numduplicate, "numsuccess": numsuccess, "numfailed": numfailed
+        }
+
         if (status == 400) {
-            return res.status(status).send("SQL_ERROR");
+            return res.json(myjson);
         }
         else {
-            return res.status(status).send("SUCCESS")
+            return res.send("SUCCESS");
         }
-    })();
+    })();   
 });
 
 //i.e. http://localhost:port/inventory/parts/modify
@@ -338,8 +378,9 @@ router.post("/upload", (req, res) => {
 
             //console.log("name: " + name+"    email: " + email+"     id: " + id)
             //this check fails, but it isn't technically necessary, the insert will just fail
-            if (id == null || name == null || cost == null || quantity == null || id == '' || name == '' || cost == '' || quantity == '') {
-                console.log("part " + i + " has a null field, skipping...")
+            if (id == null || name == null || cost == null || quantity == null || id == '' || name == '' || cost == '' || quantity == ''
+                || validate(req.body[i].part_id,req.body[i].name,req.body[i].quantity_available,req.body[i].current_cost) == -1) {
+                console.log("part " + i + " has a null field or bad datatype, skipping...")
                 failedinserts.push({ "part_id": id, "name": name, "quantity_available": quantity, "current_cost": cost });
                 status = 400;
             }
