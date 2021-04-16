@@ -80,7 +80,6 @@ router.post("/insert", (req, res) => {
     (async function sendquery(param) {
         newtuples=[]
         oldtuples=[]
-        conflictinserts=[]
         failedinserts=[]
 
         var id= req.body.part_id;
@@ -119,11 +118,8 @@ router.post("/insert", (req, res) => {
                 oldtuples.push({ "part_id": rows[0].part_id, "name": rows[0].name, "quantity_available": rows[0].quantity_available, "current_cost": parseFloat(rows[0].current_cost) })
                 newtuples.push({ "part_id": parseInt(id), "name": name, "quantity_available": parseInt(quantity), "current_cost": parseFloat(cost) })
                 console.log("That part exists, but you have supplied different values for one of the attributes");
-                console.log("oldtuple" + oldtuples)
-                console.log("newtuple" + newtuples)
                 status = 400;
                 proceed = 0;
-                conflictinserts.push([oldtuples, newtuples])
             }
         });
 
@@ -144,7 +140,7 @@ router.post("/insert", (req, res) => {
             if (rows.length == 1) {
                 console.log("That part exists, and is entirely identical to one in the database. Will not be inserted.");
                 status = 400;
-                numduplicate = numduplicate +1;
+                numduplicate = numduplicate + 1 
                 proceed = 0;
             }
         });
@@ -160,7 +156,7 @@ router.post("/insert", (req, res) => {
             queries.push(pool2.query(query[0], query[1]));
             await Promise.all(queries).catch(() => { console.log("Some sql error in insertion"); status = 400; numfailed=numfailed+1;});
         }
-        numsuccess= 1-(oldtuples.length + failedinserts.length + numduplicate);
+        numsuccess= 1-(oldtuples.length + failedinserts.length);
         myjson = {
             "conflictinserts": { "old": oldtuples, "new": newtuples }, "failedinserts": failedinserts,
             "numtotal": 1, "numduplicate": numduplicate, "numsuccess": numsuccess, "numfailed": numfailed
@@ -405,7 +401,9 @@ router.post("/upload", (req, res) => {
                 results.forEach(([rows, fields]) => {
                     if (rows.length == 1) {  //should be only 1, not 2
                         console.log("That part exists, and is entirely identical to one in the database. Will not be inserted.")
-                        newPart = 0
+                        oldtuples.push({ "part_id": rows[0].part_id, "name": rows[0].name, "quantity_available": rows[0].quantity_available, "current_cost": parseFloat(rows[0].current_cost) })
+                        newtuples.push({ "part_id": parseInt(id), "name": name, "quantity_available": parseInt(quantity), "current_cost": parseFloat(cost) })
+                        newPart = 0;
                         numduplicate = numduplicate + 1;
                         status=400; //added
                     }
@@ -433,11 +431,8 @@ router.post("/upload", (req, res) => {
                         oldtuples.push({ "part_id": rows[0].part_id, "name": rows[0].name, "quantity_available": rows[0].quantity_available, "current_cost": parseFloat(rows[0].current_cost) })
                         newtuples.push({ "part_id": parseInt(id), "name": name, "quantity_available": parseInt(quantity), "current_cost": parseFloat(cost) })
                         console.log("That part exists, but you have supplied different values for one of the attributes");
-                        console.log("oldtuple" + oldtuples)
-                        console.log("newtuple" + newtuples)
                         status = 400;
                         newPart = 0;
-                        conflictinserts.push([oldtuples, newtuples])
                     }
                 });
 
@@ -473,7 +468,10 @@ router.post("/upload", (req, res) => {
             "numtotal": numrows, "numduplicate": numduplicate, "numsuccess": numsuccess, "numfailed": numfailed
         }
 
-        if (status == 400) {
+        if(numduplicate == numrows){
+            return res.send("SUCCESS");
+        }
+        else if (status == 400) {
             return res.json(myjson);
         }
         else {

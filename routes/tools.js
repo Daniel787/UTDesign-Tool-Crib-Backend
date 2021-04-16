@@ -75,18 +75,18 @@ router.get("/search", (req, res) => {
       + "natural join "
       + "( "
       + "  SELECT rtr.tool_id tool_id, 'Rented' status, t.group_id group_id, t.net_id net_id, t.date checkout_date, "
-      + "  (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date "
-      + "  FROM mydb.transaction t , mydb.rented_tool rtr "
+      + "  (cast(from_unixtime(rtd.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date "
+      + "  FROM mydb.transaction t , mydb.rented_tool rtr, mydb.rented_tool rtd"
       + "  WHERE (t.transaction_id = rtr.transaction_id) "
       + "    AND (rtr.returned_date IS NULL) "
-      + "    AND NOW() <= (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) "
+      + "    AND NOW() <= (cast(from_unixtime(rtd.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) "
       + "  UNION "
       + "  SELECT rto.tool_id, 'Overdue' status, t.group_id group_id, t.net_id net_id, t.date checkout_date, "
-      + "  (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date "
+      + "  (cast(from_unixtime(rto.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date "
       + "  FROM mydb.transaction t , mydb.rented_tool rto "
       + "  WHERE (t.transaction_id = rto.transaction_id) "
       + "    AND (rto.returned_date IS NULL)  "
-      + "    AND NOW() > (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3)))  "
+      + "    AND NOW() > (cast(from_unixtime(rto.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3)))  "
       + "  UNION "
       + "  SELECT rta.tool_id, 'Available' status, null group_id, null net_id, null checkout_date, null due_date "
       + "  FROM mydb.rental_tool rta "
@@ -429,6 +429,8 @@ router.post("/upload", (req, res) => {
               console.log("That tool exists, and is entirely identical to one in the database. Will not insert"); 
               newTool = 0; 
               numduplicate= numduplicate +1; 
+              oldtuples.push({ "tool_id": rows[0].tool_id, "name": rows[0].name})
+              newtuples.push({ "tool_id": parseInt(id), "name": name })
               status=400; //added
             } 
           });
@@ -449,7 +451,6 @@ router.post("/upload", (req, res) => {
                 newtuples.push({ "tool_id": parseInt(id), "name": name })
                 status = 400;
                 newTool = 0;
-                conflictinserts.push([oldtuples, newtuples]) 
               } });
 
           if (newTool) {
@@ -477,7 +478,10 @@ router.post("/upload", (req, res) => {
       myjson = { "conflictinserts": { "old": oldtuples, "new": newtuples }, "failedinserts": failedinserts,
       "numtotal": numrows, "numduplicate": numduplicate, "numsuccess": numsuccess, "numfailed": numfailed}
 
-      if (status == 400) {
+      if(numduplicate == numrows){
+        return res.send("SUCCESS");
+      }
+      else if (status == 400) {
           return res.json(myjson);
       }
       else {
