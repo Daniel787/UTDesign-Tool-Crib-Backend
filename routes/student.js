@@ -14,30 +14,88 @@ router.get("/", (req, res) => {
   })
 });
 
-router.get("/groups", (req, res) => {
+router.get("/withgroups", (req, res) => {
 
-  myquery = 
-   "SELECT  ghs.net_id, s.name, s.email, s.utd_id, s.student_hold, ghs.group_id, g.group_name, g.group_sponsor "
-  +"FROM mydb.group_has_student ghs, mydb.student s, mydb.groups g "
-  +"WHERE ghs.net_id = s.net_id AND ghs.group_id = g.group_id "
-  +"ORDER BY ghs.net_id, ghs.group_id;"
+  myquery =
+    "SELECT  ghs.net_id, s.name, s.email, s.utd_id, s.student_hold, ghs.group_id, g.group_name, g.group_sponsor "
+    + "FROM mydb.group_has_student ghs, mydb.student s, mydb.groups g "
+    + "WHERE ghs.net_id = s.net_id AND ghs.group_id = g.group_id "
+    + "ORDER BY ghs.net_id, ghs.group_id;"
 
-  if (req.query.json == "true") { 
-    myquery = 
-     "SELECT JSON_OBJECT('net_id', ghs.net_id, 'name', s.name, 'email', s.email, 'utd_id', s.utd_id, 'hold', s.student_hold, 'groups', JSON_ARRAYAGG(JSON_OBJECT('group_id', ghs.group_id, 'group_name', g.group_name, 'group_sponsor', g.group_sponsor))) student "
-    +"FROM mydb.group_has_student ghs, mydb.student s, mydb.groups g "
-    +"WHERE ghs.net_id = s.net_id AND ghs.group_id = g.group_id "
-    +"GROUP BY ghs.net_id "
-    +"ORDER BY ghs.net_id, ghs.group_id;"
+  if (req.query.json == "true") {
+    myquery =
+      "SELECT JSON_OBJECT('net_id', ghs.net_id, 'name', s.name, 'email', s.email, 'utd_id', s.utd_id, 'hold', s.student_hold, 'groups', JSON_ARRAYAGG(JSON_OBJECT('group_id', ghs.group_id, 'group_name', g.group_name, 'group_sponsor', g.group_sponsor))) student "
+      + "FROM mydb.group_has_student ghs, mydb.student s, mydb.groups g "
+      + "WHERE ghs.net_id = s.net_id AND ghs.group_id = g.group_id "
+      + "GROUP BY ghs.net_id "
+      + "ORDER BY ghs.net_id, ghs.group_id;"
   }
-  
+
   pool.query(myquery, function (err, rows, fields) {
     if (err) console.log(err)
     res.json(rows);
   })
 });
 
+router.get("/withgroups/search", (req, res) => {
 
+  var myquery;
+  //csv
+  if (req.query.net_id) {
+    myquery = toUnnamed(
+      "SELECT  ghs.net_id, s.name, s.email, s.utd_id, s.student_hold, ghs.group_id, g.group_name, g.group_sponsor "
+      + "FROM mydb.group_has_student ghs, mydb.student s, mydb.groups g "
+      + "WHERE ghs.net_id = s.net_id AND ghs.group_id = g.group_id AND s.net_id = :net_id "
+      + "ORDER BY ghs.net_id, ghs.group_id;", {
+      net_id: req.query.net_id
+    });
+  }
+  else if (req.query.name) {
+    myquery = toUnnamed(
+      "SELECT  ghs.net_id, s.name, s.email, s.utd_id, s.student_hold, ghs.group_id, g.group_name, g.group_sponsor "
+      + "FROM mydb.group_has_student ghs, mydb.student s, mydb.groups g "
+      + "WHERE ghs.net_id = s.net_id AND ghs.group_id = g.group_id AND LOWER(s.name) LIKE LOWER(:name) "
+      + "ORDER BY ghs.net_id, ghs.group_id;", {
+      name: "%" + req.query.name + "%"
+    });
+  }
+  else {
+    //invalid parameters
+    return res.status(400).send("MISSING_PARAMS");
+  }
+
+  //json
+  if (req.query.json == "true") {
+    if (req.query.net_id) {
+      myquery = toUnnamed(
+        "SELECT JSON_OBJECT('net_id', ghs.net_id, 'name', s.name, 'email', s.email, 'utd_id', s.utd_id, 'hold', s.student_hold, 'groups', JSON_ARRAYAGG(JSON_OBJECT('group_id', ghs.group_id, 'group_name', g.group_name, 'group_sponsor', g.group_sponsor))) student "
+        + "FROM mydb.group_has_student ghs, mydb.student s, mydb.groups g "
+        + "WHERE ghs.net_id = s.net_id AND ghs.group_id = g.group_id AND s.net_id = :net_id "
+        + "GROUP BY ghs.net_id "
+        + "ORDER BY ghs.net_id, ghs.group_id;", {
+        net_id: req.query.net_id
+      });
+    }
+    else if (req.query.name) {
+      myquery = toUnnamed(
+        "SELECT JSON_OBJECT('net_id', ghs.net_id, 'name', s.name, 'email', s.email, 'utd_id', s.utd_id, 'hold', s.student_hold, 'groups', JSON_ARRAYAGG(JSON_OBJECT('group_id', ghs.group_id, 'group_name', g.group_name, 'group_sponsor', g.group_sponsor))) student "
+        + "FROM mydb.group_has_student ghs, mydb.student s, mydb.groups g "
+        + "WHERE ghs.net_id = s.net_id AND ghs.group_id = g.group_id AND LOWER(s.name) LIKE LOWER(:name) "
+        + "GROUP BY ghs.net_id "
+        + "ORDER BY ghs.net_id, ghs.group_id;", {
+        name: "%" + req.query.name + "%"
+      });
+    }
+    else {
+      //invalid parameters
+      return res.status(400).send("MISSING_PARAMS");
+    }
+  }
+  pool.query(myquery[0], myquery[1], function (err, rows, fields) {
+    if (err) console.log(err)
+    res.json(rows);
+  })
+});
 
 //i.e. http://localhost:port/student/search?net_id=180004
 router.get("/search", (req, res) => {
@@ -240,7 +298,7 @@ router.post("/upload", (req, res) => {
     }
 
     //Now enter the process of inserting students. This time, no checks on group are performed.
-    for (i = 0; i < req.body.groups.length; i++){
+    for (i = 0; i < req.body.groups.length; i++) {
       var group_id = req.body.groups[i].group_id;
       var group_name = req.body.groups[i].group_name;
       var group_sponsor = req.body.groups[i].group_sponsor;
@@ -388,17 +446,17 @@ router.post("/upload", (req, res) => {
       }
     }
 
-  var myjson2 = ""
-  myjson2 = { "conflictgroups:": conflictgroups, "failedgroups": failedgroups, "conflictinserts": { "old": oldtuples, "new": newtuples }, "failedinserts": failedinserts }
-  console.log("FAILED NUMBER: ", failedinserts.length)
-  //return here if any groups are screwed
-  if (status == 400) {
-    return res.status(status).json(myjson2);
-  }
-  else {
-    return res.send("SUCCESS")
-  }
-})();
+    var myjson2 = ""
+    myjson2 = { "conflictgroups:": conflictgroups, "failedgroups": failedgroups, "conflictinserts": { "old": oldtuples, "new": newtuples }, "failedinserts": failedinserts }
+    console.log("FAILED NUMBER: ", failedinserts.length)
+    //return here if any groups are screwed
+    if (status == 400) {
+      return res.status(status).json(myjson2);
+    }
+    else {
+      return res.send("SUCCESS")
+    }
+  })();
 });
 
 module.exports = router;
