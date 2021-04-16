@@ -234,48 +234,6 @@ router.post("/delete", (req, res) => {
   })();
 });
 
-/*
-//i.e. http://localhost:port/inventory/tools/search?name=phil
-router.get("/searchname", (req, res) => {
-  //arguments
-  var id = req.query.name;
-
-  var myquery = toUnnamed(
-  "SELECT * FROM mydb.rental_tool "
-  + "natural join "
-  + "( "
-  + "	SELECT rtr.tool_id, 'Rented' status "
-  + "	FROM mydb.transaction t , mydb.rented_tool rtr "
-  + "	WHERE (t.transaction_id = rtr.transaction_id) AND rtr.name LIKE LOWER(CONCAT('%', :name, '%'))"
-  + "		AND (rtr.returned_date IS NULL) "
-  + "		AND NOW() <= (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) "
-  + "	UNION "
-  + "	SELECT rto.tool_id, 'Overdue' status "
-  + "	FROM mydb.transaction t , mydb.rented_tool rto "
-  + "	WHERE (t.transaction_id = rto.transaction_id) AND rto.name LIKE LOWER(CONCAT('%', :name, '%'))"
-  + "		AND (rto.returned_date IS NULL)  "
-  + "		AND NOW() > (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3)))  "
-  + "	UNION "
-  + "	SELECT rta.tool_id, 'Available' status  "
-  + "	FROM mydb.rental_tool rta "
-  + "	WHERE rta.name LIKE LOWER(CONCAT('%', :name, '%')) AND rta.tool_id  "
-  + "		NOT IN (SELECT rt.tool_id "
-  + "			FROM mydb.transaction t, mydb.rented_tool rt "
-  + "			WHERE (t.transaction_id = rt.transaction_id)"
-  + "				AND(rt.returned_date IS NULL) "
-  + "			ORDER BY REVERSE (t.date)) "
-  + ") u;",{
-    name: id
-  });
-  pool.query(myquery[0], myquery[1], function (err, rows, fields) {
-    if (err) console.log(err);
-    res.json(rows);
-  });
-});
-*/
-
-
-
 //emails start
 var emailsdates = [] //stores the emails and the dates they *should* have been returned by
 
@@ -295,7 +253,7 @@ function sendmails() {
     if (emailsdates[i][1] <= Date.now()) {
       var email = String(emailsdates[i][0])
 
-      console.log("We found someone with an overdue part!")
+      console.log("We found someone with an overdue tool!")
       const mailOptions = {
         from: 'toolcributd@gmail.com', // sender address
         to: email, // list of receivers
@@ -337,75 +295,95 @@ job.start();
 
 //tool/rental start
 
-//note: the json used is actually wrong because of duplicate key, use this to rent two items:
-/*
-{
-    "customer": {
-        "net_id": "bcd180003",
-        "group_id": 357
-    },
-    "cart": [
-        {
-            "tool": {
-                "tool_id": 111
-            }
-        },
-        {
-            "tool": {
-                "tool_id": 222
-            }
-
-        }
-    ]
-}
-*/
-
 router.post("/insert", (req, res) => {
-  if(validate(req.body.tool_id, req.body.name) == -1){
-    return res.status(400).send("BAD_DATATYPES");
-  }; 
+  var numduplicate = 0, numsuccess = 0, numfailed = 0;
 
-  if(req.body.tool_id < 0){
-    return res.status(400).send("DELETED_TOOL");
-  }
+    (async function sendquery(param) {
+        newtuples=[]
+        oldtuples=[]
+        conflictinserts=[]
+        failedinserts=[]
 
-  var query = toUnnamed("INSERT into mydb.rental_tool VALUES(:tool_id, :name)", {
-    tool_id: req.body.tool_id,
-    name: req.body.name,
-  });
+        var id= req.body.tool_id;
+        var name= req.body.name;
 
-  pool.query(query[0], query[1], function (err, rows, fields) {
-    if (err) {
-      console.log(err)
-      res.status(400).send(err.code)
-    }
-    res.send();
-  })
-});
+        var proceed=1;
+        //easy checks that don't require queries
+        if( (validate(id,name)  == -1) || req.body.tool_id < 0){
+            proceed=0;
+            failedinserts.push({"tool_id": id, "name": name});
+            numfailed = numfailed+1;
+            var myjson = {
+                "conflictinserts": { "old": oldtuples, "new": newtuples }, "failedinserts": failedinserts,
+                "numtotal": 1, "numduplicate": numduplicate, "numsuccess": numsuccess, "numfailed": numfailed
+            }
+            return res.json(myjson);
+        }
 
-//Note: this route is currently not used or called.
-router.post("/insertMultiple", (req, res) => {
-  console.log("IN HERE");
-  (async function sendquery(param) {
-    queries = []
+        var pool2 = pool.promise();
+        var queries=[]
+        //we want to examine matching tool id, but difference something else
+        var query = toUnnamed("SELECT * FROM mydb.rental_tool r WHERE r.tool_id = :tool_id AND r.name <> :tool_name", {
+            tool_id: id,
+            tool_name: name,
+        });
+        queries.push(pool2.query(query[0], query[1]));
+        var results = await Promise.all(queries);
 
-    const pool2 = pool.promise();
-    console.log("length: ")
-    console.log(req.body.cart.length)
-    for (i = 0; i < req.body.cart.length; i++) {
-      var query = toUnnamed("INSERT into mydb.rental_tool VALUES(:tool_id, :name)", {
-        tool_id: req.body.cart[i].item.tool_id,
-        name: req.body.cart[i].item.name
-      });
+        results.forEach(([rows, fields]) => {
+            if (rows.length == 1) {
+                oldtuples.push({ "tool_id": rows[0].tool_id, "name": rows[0].name })
+                newtuples.push({ "tool_id": parseInt(id), "name": name })
+                console.log("That tool exists, but you have supplied different values for one of the attributes");
+                console.log("oldtuple" + oldtuples)
+                console.log("newtuple" + newtuples)
+                status = 400;
+                proceed = 0;
+                conflictinserts.push([oldtuples, newtuples])
+            }
+        });
 
-      queries.push(pool2.query(query[0], query[1]));
-    }
+        var queries=[]
+        var pool2 = pool.promise();
+        //matching everything
+        var query = toUnnamed("SELECT * FROM mydb.rental_tool r WHERE r.tool_id = :tool_id AND r.name = :tool_name", {
+            tool_id: id,
+            tool_name: name
+        });
+        queries.push(pool2.query(query[0], query[1]));
+        var results = await Promise.all(queries);
 
-    console.log("NUMQUERIES: " + queries.length);
-    var status = 200;
-    const results = await Promise.all(queries).catch(() => { console.log("One of the tools failed to insert."); status = 412; });
-    return res.status(status).send("done with route");
-  })();
+        results.forEach(([rows, fields]) => {
+            if (rows.length == 1) {
+                console.log("That tool exists, and is entirely identical to one in the database. Will not be inserted.");
+                status = 400;
+                numduplicate = numduplicate +1;
+                proceed = 0;
+            }
+        });
+
+        if(proceed){
+            var queries = []
+            var query = toUnnamed("INSERT into mydb.rental_tool VALUES (:tool_id, :name)", {
+                tool_id: req.body.tool_id,
+                name: req.body.name
+            });
+            queries.push(pool2.query(query[0], query[1]));
+            await Promise.all(queries).catch(() => { console.log("Some sql error in insertion"); status = 400; numfailed=numfailed+1;});
+        }
+        numsuccess= 1-(oldtuples.length + failedinserts.length + numduplicate);
+        myjson = {
+            "conflictinserts": { "old": oldtuples, "new": newtuples }, "failedinserts": failedinserts,
+            "numtotal": 1, "numduplicate": numduplicate, "numsuccess": numsuccess, "numfailed": numfailed
+        }
+
+        if (status == 400) {
+            return res.json(myjson);
+        }
+        else {
+            return res.send("SUCCESS");
+        }
+    })();   
 });
 
 router.post("/upload", (req, res) => {
@@ -485,7 +463,7 @@ router.post("/upload", (req, res) => {
 
 
             //console.log("NUMQUERIES: " + queries.length);
-            //later: change error msg to be which part and why
+            //later: change error msg to be which tool and why
             const results = await Promise.all(queries).catch(() => { console.log("One of the tools failed to insert."); status = 400; failedinserts.push(name) });
           }
         }//async
@@ -510,6 +488,10 @@ router.post("/upload", (req, res) => {
 
 
 router.post("/rent", (req, res) => {
+  if(req.query.super){
+    
+  }
+
   (async function sendquery(param) {
     queries = []
     const pool2 = pool.promise();
@@ -537,7 +519,7 @@ router.post("/rent", (req, res) => {
     var valid = []
     var status = 200
 
-    results.forEach(([rows, fields]) => { if (rows.length == 1) { console.log("That student has a hold"); console.log(rows.length); status = 412; } });
+    results.forEach(([rows, fields]) => { if (rows.length == 1) { console.log("That student has a hold"); console.log(rows.length); status = 400; } });
     results.forEach(([rows, fields]) => { valid.push(rows[0]); console.log(rows[0]); });
 
     if (status != 200) {
@@ -548,7 +530,7 @@ router.post("/rent", (req, res) => {
     queries = []
     //console.log("length"+ req.body.cart.length);
 
-    console.log("Part 2- check if out");
+    console.log("tool 2- check if out");
     for (i = 0; i < req.body.cart.length; i++) {
       if(req.body.cart[i].item.tool_id < 0){
         return res.status(400).send("DELETED_TOOL");
@@ -568,26 +550,27 @@ router.post("/rent", (req, res) => {
     valid = []
     status = 200;
 
-    results.forEach(([rows, fields]) => { if (rows.length != 0) { console.log("That item is currently out"); status = 412; } });
+    results.forEach(([rows, fields]) => { if (rows.length != 0) { console.log("That item is currently out"); status = 400; } });
     results.forEach(([rows, fields]) => { valid.push(rows[0]); console.log(rows[0]); });
 
     if (status != 200) {
-      return res.status(400).send('PART_ALREADY_OUT');
+      return res.status(400).send('TOOL_ALREADY_OUT');
     }
 
-    console.log("Part 3- Place the rental");
+    console.log("tool 3- Place the rental");
     queries = []
 
     for (i = 0; i < req.body.cart.length; i++) {
       var query = toUnnamed("INSERT into mydb.transaction (transaction_id, group_id, net_id, date, type) VALUES "
         + "(UUID_TO_BIN(:transaction_id), :group_id, :net_id, NOW(3), :type);"
-        + "INSERT into mydb.rented_tool (transaction_id, tool_id, returned_date, notification_sent) VALUES "
-        + "(UUID_TO_BIN(:transaction_id), :tool_id, NULL, :notification_sent)", {
+        + "INSERT into mydb.rented_tool (transaction_id, tool_id, returned_date, notification_sent, hours_rented) VALUES "
+        + "(UUID_TO_BIN(:transaction_id), :tool_id, NULL, :notification_sent, :hours)", {
         transaction_id: uuid.v1(),
         group_id: req.body.customer.group_id,
         net_id: req.body.customer.net_id,
         type: "rental",
         tool_id: req.body.cart[i].item.tool_id,
+        hours: req.body.cart[i].item.hours,
         notification_sent: 0
       });
 
@@ -595,16 +578,11 @@ router.post("/rent", (req, res) => {
     }
 
     //console.log("NUMQUERIES: " + queries.length);
-    try {
-      results = await Promise.all(queries);
-    } catch (e) {
-      console.log("Some issue in placing rental")
-      console.log(e.message);
-    }
+    var results = await Promise.all(queries).catch(() => { console.log("Rental placement failed."); status = 400; });
     valid = []
     status = 200;
 
-    //results.forEach(([rows, fields]) => { if (rows.length != 0){ console.log("Some issue placing the rental");status = 412; }});
+    //results.forEach(([rows, fields]) => { if (rows.length != 0){ console.log("Some issue placing the rental");status = 400; }});
     results.forEach(([rows, fields]) => { valid.push(rows[0]); console.log(rows); });
     //console.log("VALID: "+ valid)
 
@@ -613,7 +591,7 @@ router.post("/rent", (req, res) => {
     }
 
 
-    console.log("Part 4- Push email to emailsdates")
+    console.log("tool 4- Push email to emailsdates")
     //Add: push the email of the student and the date +2hrs to emailsdates
     var query = toUnnamed("SELECT email FROM mydb.Student WHERE net_id=:net_id ", {
       net_id: req.body.customer.net_id
@@ -624,7 +602,7 @@ router.post("/rent", (req, res) => {
     valid = []
     status = 200;
 
-    results.forEach(([rows, fields]) => { if (rows.length == 0) { console.log("We couldn't retrieve a mail"); status = 412; } });
+    results.forEach(([rows, fields]) => { if (rows.length == 0) { console.log("We couldn't retrieve a mail"); status = 400; } });
     if (status != 200) {
       return res.status(400).send('NO_EMAIL');
     }
@@ -634,8 +612,8 @@ router.post("/rent", (req, res) => {
       var id = req.body.customer.net_id
       var email = 'sudhi.jagadeeshi@gmail.com'
       var temp = new Date(Date.now())
-      //datedue.setTime(datedue.getTime() + (2*60*60*1000)); //add two hours
-      var datedue = new Date(temp.getTime() + (6 * 1000)); //add 6 seconds
+      //datedue.setTime(datedue.getTime() + (req.body.cart[i].item.hours*60*60*1000)); //add required number of hours
+      var datedue = new Date(temp.getTime() + (6 * 1000)); //for testing, add 6 seconds
 
       //when there are actual emails in the DB, uncomment
       //results.forEach(([rows, fields]) => { emailsdates.push([rows[0], datedue]) });
@@ -695,7 +673,7 @@ router.post("/return", (req, res) => {
     status = 200;
     var studentRenting = "";
 
-    results.forEach(([rows, fields]) => { if (rows.length == 0) { console.log("ROWS" + rows); console.log("Nobody has that part checked out at this time"); status = 412; } });
+    results.forEach(([rows, fields]) => { if (rows.length == 0) { console.log("ROWS" + rows); console.log("Nobody has that tool checked out at this time"); status = 400; } });
     if (status != 200) {
       return res.status(status).send("NOT_OUT");
     }
@@ -704,7 +682,7 @@ router.post("/return", (req, res) => {
     console.log("VALID: " + valid)
 
     //else transaction is valid, so insert the transaction row for the tool
-    console.log("That part is able to be returned...");
+    console.log("That tool is able to be returned...");
     queries = []
 
     //for (i = 0; i < req.body.cart.length; i++) {
