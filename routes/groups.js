@@ -18,11 +18,19 @@ router.get("/", (req, res) => {
 router.get("/members", (req, res) => {
 
   myquery =
-   "SELECT ghs.group_id, g.group_name, g.group_sponsor, ghs.net_id, s.name, s.email, s.utd_id, s.student_hold  "
-  +"FROM mydb.group_has_student ghs, mydb.student s, mydb.groups g "
-  +"WHERE ghs.net_id = s.net_id AND ghs.group_id = g.group_id "
-  +"ORDER BY ghs.group_id, ghs.net_id;"
-  
+    "SELECT ghs.group_id, g.group_name, g.group_sponsor, ghs.net_id, s.name, s.email, s.utd_id, s.student_hold  "
+    + "FROM mydb.group_has_student ghs, mydb.student s, mydb.groups g "
+    + "WHERE ghs.net_id = s.net_id AND ghs.group_id = g.group_id "
+    + "ORDER BY ghs.group_id, ghs.net_id;"
+
+  if(req.query.json="true"){
+    myquery =
+    "SELECT JSON_OBJECT('group_id', ghs.group_id, 'group_name', g.group_name, 'group_sponsor', g.group_sponsor, 'students', JSON_ARRAYAGG(JSON_OBJECT('net_id', ghs.net_id, 'name', s.name, 'email', s.email, 'utd_id', s.utd_id, 'hold', s.student_hold))) `group` "
+    + "FROM mydb.group_has_student ghs, mydb.student s, mydb.groups g "
+    + "WHERE ghs.net_id = s.net_id AND ghs.group_id = g.group_id "
+    + "GROUP BY ghs.group_id "
+    + "ORDER BY ghs.group_id, ghs.net_id;"
+  }
   pool.query(myquery, function (err, rows, fields) {
     if (err) console.log(err)
     res.json(rows);
@@ -72,16 +80,16 @@ router.get("/detailed", (req, res) => {
 });
 
 router.get("/detailed2", (req, res) => {
-  myquery = 
-   "SELECT g.group_id, JSON_ARRAYAGG(JSON_OBJECT('net_id', g.net_id, 'name', g.name, 'tools', g.tools)) students "
-  +"FROM  "
-  +"  (SELECT s.group_id, s.net_id, s.name, JSON_ARRAYAGG(JSON_OBJECT('tool_id', s.tool_id, 'status', s.status)) tools "
-  +"  FROM  "
-  +"  mydb.group_details s "
-  +"  GROUP BY s.group_id, s.net_id "
-  +"  ORDER BY s.net_id) g "
-  +"GROUP BY g.group_id "
-  +"ORDER BY g.group_id; "
+  myquery =
+    "SELECT g.group_id, JSON_ARRAYAGG(JSON_OBJECT('net_id', g.net_id, 'name', g.name, 'tools', g.tools)) students "
+    + "FROM  "
+    + "  (SELECT s.group_id, s.net_id, s.name, JSON_ARRAYAGG(JSON_OBJECT('tool_id', s.tool_id, 'status', s.status)) tools "
+    + "  FROM  "
+    + "  mydb.group_details s "
+    + "  GROUP BY s.group_id, s.net_id "
+    + "  ORDER BY s.net_id) g "
+    + "GROUP BY g.group_id "
+    + "ORDER BY g.group_id; "
 
   pool.query(myquery, function (err, rows, fields) {
     if (err) console.log(err)
