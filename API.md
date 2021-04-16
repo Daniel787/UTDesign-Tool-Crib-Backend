@@ -394,6 +394,146 @@ Failure Response : Status `400` Bad Request and errcode in response:
 * 'MISSING_PARAMS' when start or end date missing
 
 ## Students and Groups
+
+### Get a list of students and what group(s) they are in
+`GET`, /student/withgroups
+
+Request: none
+
+Optional:
+?json={STRING} as "true"
+
+Success Response ?json="true": Status `200` and JSON:
+```
+[
+    {
+        "student": {
+            "hold": {INT} 0 or 1,
+            "name": {STRING},
+            "email": {STRING},
+            "groups": [
+                {
+                    "group_id": {INT},
+                    "group_name": {STRING},
+                    "group_sponsor": {STRING}
+                },...
+            ],
+            "net_id": {STRING},
+            "utd_id": {INT}
+        }
+    },...
+]
+```
+OR
+CSV version without ?json="true"
+
+
+### Get a list of students matching search criteria and what group(s) they are in
+`GET`, /student/withgroups/search
+
+Request: ?net_id={STRING} or ?name={STRING}
+
+
+Optional:
+?json={STRING} as "true"
+
+
+Success Response ?json="true": Status `200` and JSON:
+```
+[
+    {
+        "student": {
+            "hold": {INT} 0 or 1,
+            "name": {STRING},
+            "email": {STRING},
+            "groups": [
+                {
+                    "group_id": {INT},
+                    "group_name": {STRING},
+                    "group_sponsor": {STRING}
+                },...
+            ],
+            "net_id": {STRING},
+            "utd_id": {INT}
+        }
+    },...
+]
+```
+OR
+CSV version without ?json="true"
+
+Failure Response : Status `400` Bad Request and errcode in response:
+* 'MISSING\_PARAMS' when missing net\_id or name  
+
+
+### Get a list of groups and what student(s)/member(s) they have
+`GET`, /groups/withmembers
+
+Request: none
+
+Optional:
+?json={STRING} as "true"
+
+Success Response ?json="true": Status `200` and JSON:
+```
+[
+    {
+        "group": {
+            "group_id": {INT},
+            "students": [
+                {
+                    "hold": {INT} 0 or 1,
+                    "name": {STRING},
+                    "email": {STRING},
+                    "net_id": {STRING},
+                    "utd_id": {INT}
+                },...
+            ],
+            "group_name": {STRING},
+            "group_sponsor": {STRING}
+        }
+    },...
+]
+```
+OR
+CSV version without ?json="true"
+
+
+### Get a list of groups matching search criteria and what student(s)/member(s) they have
+`GET`, /groups/withmembers/search
+
+Request:  ?group_id={INT} or ?name={STRING}
+
+Optional:
+?json={STRING} as "true"
+
+Success Response ?json="true": Status `200` and JSON:
+```
+[
+    {
+        "group": {
+            "group_id": {INT},
+            "students": [
+                {
+                    "hold": {INT} 0 or 1,
+                    "name": {STRING},
+                    "email": {STRING},
+                    "net_id": {STRING},
+                    "utd_id": {INT}
+                },...
+            ],
+            "group_name": {STRING},
+            "group_sponsor": {STRING}
+        }
+    },...
+]
+```
+OR
+CSV version without ?json="true"
+
+Failure Response : Status `400` Bad Request and errcode in response:
+* 'MISSING\_PARAMS' when missing group\_id or name 
+
 ### Upload a sheet of Students and Groups
 `POST`, /students/upload
 
