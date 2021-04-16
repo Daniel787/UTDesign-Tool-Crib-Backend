@@ -23,13 +23,13 @@ router.get("/members", (req, res) => {
     + "WHERE ghs.net_id = s.net_id AND ghs.group_id = g.group_id "
     + "ORDER BY ghs.group_id, ghs.net_id;"
 
-  if(req.query.json="true"){
+  if (req.query.json = "true") {
     myquery =
-    "SELECT JSON_OBJECT('group_id', ghs.group_id, 'group_name', g.group_name, 'group_sponsor', g.group_sponsor, 'students', JSON_ARRAYAGG(JSON_OBJECT('net_id', ghs.net_id, 'name', s.name, 'email', s.email, 'utd_id', s.utd_id, 'hold', s.student_hold))) `group` "
-    + "FROM mydb.group_has_student ghs, mydb.student s, mydb.groups g "
-    + "WHERE ghs.net_id = s.net_id AND ghs.group_id = g.group_id "
-    + "GROUP BY ghs.group_id "
-    + "ORDER BY ghs.group_id, ghs.net_id;"
+      "SELECT JSON_OBJECT('group_id', ghs.group_id, 'group_name', g.group_name, 'group_sponsor', g.group_sponsor, 'students', JSON_ARRAYAGG(JSON_OBJECT('net_id', ghs.net_id, 'name', s.name, 'email', s.email, 'utd_id', s.utd_id, 'hold', s.student_hold))) `group` "
+      + "FROM mydb.group_has_student ghs, mydb.student s, mydb.groups g "
+      + "WHERE ghs.net_id = s.net_id AND ghs.group_id = g.group_id "
+      + "GROUP BY ghs.group_id "
+      + "ORDER BY ghs.group_id, ghs.net_id;"
   }
   pool.query(myquery, function (err, rows, fields) {
     if (err) console.log(err)
@@ -109,6 +109,66 @@ router.get("/search", (req, res) => {
   })
 });
 
+router.get("/members/search", (req, res) => {
+
+  var myquery;
+  //csv
+  if (req.query.group_id) {
+    myquery = toUnnamed(
+      "SELECT ghs.group_id, g.group_name, g.group_sponsor, ghs.net_id, s.name, s.email, s.utd_id, s.student_hold  "
+      + "FROM mydb.group_has_student ghs, mydb.student s, mydb.groups g "
+      + "WHERE ghs.net_id = s.net_id AND ghs.group_id = g.group_id AND ghs.group_id = :group_id "
+      + "ORDER BY ghs.group_id, ghs.net_id;", {
+      group_id: req.query.group_id
+    });
+  }
+  else if (req.query.name) {
+    myquery = toUnnamed(
+      "SELECT ghs.group_id, g.group_name, g.group_sponsor, ghs.net_id, s.name, s.email, s.utd_id, s.student_hold  "
+      + "FROM mydb.group_has_student ghs, mydb.student s, mydb.groups g "
+      + "WHERE ghs.net_id = s.net_id AND ghs.group_id = g.group_id AND LOWER(g.group_name) LIKE LOWER(:name) "
+      + "ORDER BY ghs.group_id, ghs.net_id;", {
+      name: "%" + req.query.name + "%"
+    });
+  }
+  else {
+    //invalid parameters
+    return res.status(400).send("MISSING_PARAMS");
+  }
+
+  //json
+  if (req.query.json = "true") {
+    if (req.query.group_id) {
+      myquery = toUnnamed(
+        "SELECT JSON_OBJECT('group_id', ghs.group_id, 'group_name', g.group_name, 'group_sponsor', g.group_sponsor, 'students', JSON_ARRAYAGG(JSON_OBJECT('net_id', ghs.net_id, 'name', s.name, 'email', s.email, 'utd_id', s.utd_id, 'hold', s.student_hold))) `group` "
+      + "FROM mydb.group_has_student ghs, mydb.student s, mydb.groups g "
+      + "WHERE ghs.net_id = s.net_id AND ghs.group_id = g.group_id AND ghs.group_id = g.group_id AND ghs.group_id = :group_id "
+      + "GROUP BY ghs.group_id "
+      + "ORDER BY ghs.group_id, ghs.net_id;", {
+        group_id: req.query.group_id
+      });
+    }
+    else if (req.query.name) {
+      myquery = toUnnamed(
+        "SELECT JSON_OBJECT('group_id', ghs.group_id, 'group_name', g.group_name, 'group_sponsor', g.group_sponsor, 'students', JSON_ARRAYAGG(JSON_OBJECT('net_id', ghs.net_id, 'name', s.name, 'email', s.email, 'utd_id', s.utd_id, 'hold', s.student_hold))) `group` "
+      + "FROM mydb.group_has_student ghs, mydb.student s, mydb.groups g "
+      + "WHERE ghs.net_id = s.net_id AND ghs.group_id = g.group_id AND LOWER(g.group_name) LIKE LOWER(:name) "
+      + "GROUP BY ghs.group_id "
+      + "ORDER BY ghs.group_id, ghs.net_id;", {
+        name: "%" + req.query.name + "%"
+      });
+    }
+    else {
+      //invalid parameters
+      return res.status(400).send("MISSING_PARAMS");
+    }
+  }
+  pool.query(myquery[0], myquery[1], function (err, rows, fields) {
+    if (err) console.log(err)
+    res.json(rows);
+  })
+});
+
 //i.e. http://localhost:port/group/searchname?name =TeamName
 router.get("/searchname", (req, res) => {
   //arguments
@@ -128,7 +188,6 @@ router.get("/searchname", (req, res) => {
     "group_sponsor": "billy"
 }
 */
-
 //i.e. http://localhost:port/group/modify
 router.post("/modify", (req, res) => {
   (async function sendquery(param) {
