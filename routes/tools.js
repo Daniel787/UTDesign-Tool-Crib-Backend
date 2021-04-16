@@ -402,10 +402,12 @@ router.post("/upload", (req, res) => {
         var id = req.body[i].tool_id
         var name = req.body[i].name
 
-        //console.log("name: " + name+"    email: " + email+"     id: " + id)
+        console.log("id: " + id+   "name"+  name)
         //this check fails, but it isn't technically necessary, the insert will just fail
         if (id == null || name == null || id == '' || name == '' || validate(id, name) == -1 ) {
-          console.log("tool " + i + " has a null field, skipping...")
+          console.log("tool " + i + " has a null field, skipping...");
+          failedinserts.push({ "tool_id": id, "name": name });
+          status=400;
         }
         else {
           console.log("id: " + id + "    name: " + name)
