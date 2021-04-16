@@ -93,7 +93,6 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Inventory_Part` (
   `name` VARCHAR(100) NULL,
   `quantity_available` INT NOT NULL,
   `current_cost` DECIMAL(6,2) NOT NULL,
-  `hours_rented` INT NOT NULL,
   PRIMARY KEY (`part_id`))
 ENGINE = InnoDB;
 
@@ -116,6 +115,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Rented_Tool` (
   `tool_id` INT NOT NULL,
   `returned_date` DATETIME(3) NULL,
   `notification_sent` TINYINT NULL,
+  `hours_rented` INT NOT NULL,
   PRIMARY KEY (`transaction_id`, `tool_id`),
   INDEX `fk_rented_tool_rental_tool1_idx` (`tool_id` ASC) VISIBLE,
   CONSTRAINT `fk_rented_tool_transaction1`
@@ -252,10 +252,10 @@ LEFT JOIN
 ON
 u.net_id = s.net_id AND u.group_id = s.group_id;
 
-insert into mydb.inventory_part (part_id, name, quantity_available, current_cost, hours_rented) VALUES
-(12345, "phillips screw size X", 17, .01, 2), -- 17 screws in stock, one penny (0.01 dollars) per screw
-(56789, "arduino micro without headers", 8, 12, 2),  -- 8 arduinos in stock, 12 dollars per arduino
-(35791, "hot glue stick", 5, .50, 2); -- 4 hot glue gun sticks in stock, 0.50 dollars per stick
+insert into mydb.inventory_part (part_id, name, quantity_available, current_cost) VALUES
+(12345, "phillips screw size X", 17, .01), -- 17 screws in stock, one penny (0.01 dollars) per screw
+(56789, "arduino micro without headers", 8, 12),  -- 8 arduinos in stock, 12 dollars per arduino
+(35791, "hot glue stick", 5, .50); -- 4 hot glue gun sticks in stock, 0.50 dollars per stick
 
 insert into mydb.student (net_id, name, email, utd_id, student_hold) values
 ('abc180002', "Fake Name1", "002@utdallas", 2, false),
