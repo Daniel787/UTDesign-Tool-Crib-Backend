@@ -246,7 +246,7 @@ var transporter = nodemailer.createTransport({
 });
 
 
-//emails, dates, id, tool_id
+//emails, dates, id, tool_name
 function sendmails() {
   console.log("sendmails(): emailsdates.length: " + emailsdates.length)
   for (var i = 0; i < emailsdates.length; i++) {
@@ -309,7 +309,7 @@ router.post("/insert", (req, res) => {
 
         var proceed=1;
         //easy checks that don't require queries
-        if( (validate(id,name)  == -1) || req.body.tool_id < 0){
+        if( (validate(id,name)  == -1) || id< 0 || id== null || name == null || id == "" || name == ""){
             proceed=0;
             failedinserts.push({"tool_id": id, "name": name});
             numfailed = numfailed+1;
@@ -489,7 +489,10 @@ router.post("/upload", (req, res) => {
 
 router.post("/rent", (req, res) => {
   if(req.query.super){
-    
+    var superrent=1;
+  }
+  else{
+    var superrent=0;
   }
 
   (async function sendquery(param) {
@@ -497,38 +500,40 @@ router.post("/rent", (req, res) => {
     const pool2 = pool.promise();
     var id = req.body.customer.net_id
 
+    //when superrent is 1, the following check does not occur
+    if(! superrent){
+      for (i = 0; i < req.body.cart.length; i++) {
+        //CHECK: does the student have a hold?
 
-    for (i = 0; i < req.body.cart.length; i++) {
-      //CHECK: does the student have a hold?
+        if(validate(req.body.cart[i].item.tool_id, " ") == -1){
+          return res.status(400).send("BAD_DATATYPES");
+        }; 
 
-      if(validate(req.body.cart[i].item.tool_id, " ") == -1){
-        return res.status(400).send("BAD_DATATYPES");
-      }; 
+        var query = toUnnamed(
+          "SELECT * FROM mydb.student WHERE student_hold = true AND net_id= :student_id", {
+          tool_id: req.body.cart[i].item.tool_id,
+          student_id: req.body.customer.net_id
+        });
+        
+        queries.push(pool2.query(query[0], query[1]));
+      }
 
-      var query = toUnnamed(
-        "SELECT * FROM mydb.student WHERE student_hold = true AND net_id= :student_id", {
-        tool_id: req.body.cart[i].item.tool_id,
-        student_id: req.body.customer.net_id
-      });
-      
-      queries.push(pool2.query(query[0], query[1]));
+      //console.log("NUMQUERIES: " + queries.length);
+      var results = await Promise.all(queries);
+      var valid = []
+      var status = 200
+
+      results.forEach(([rows, fields]) => { if (rows.length == 1) { console.log("That student has a hold"); console.log(rows.length); status = 400; } });
+      results.forEach(([rows, fields]) => { valid.push(rows[0]); console.log(rows[0]); });
+
+      if (status != 200) {
+        return res.status(400).send('STUDENT_HOLD');
+      }
+
+      console.log("The student does not have a hold")
+      queries = []
+      //console.log("length"+ req.body.cart.length);
     }
-
-    //console.log("NUMQUERIES: " + queries.length);
-    var results = await Promise.all(queries);
-    var valid = []
-    var status = 200
-
-    results.forEach(([rows, fields]) => { if (rows.length == 1) { console.log("That student has a hold"); console.log(rows.length); status = 400; } });
-    results.forEach(([rows, fields]) => { valid.push(rows[0]); console.log(rows[0]); });
-
-    if (status != 200) {
-      return res.status(400).send('STUDENT_HOLD');
-    }
-
-    console.log("The student does not have a hold")
-    queries = []
-    //console.log("length"+ req.body.cart.length);
 
     console.log("tool 2- check if out");
     for (i = 0; i < req.body.cart.length; i++) {
@@ -608,7 +613,7 @@ router.post("/rent", (req, res) => {
     }
 
     for (i = 0; i < req.body.cart.length; i++) {
-      var tool_name = req.body.cart[i].item.tool_name
+      var tool_name = req.body.cart[i].item.name
       var id = req.body.customer.net_id
       var email = 'sudhi.jagadeeshi@gmail.com'
       var temp = new Date(Date.now())
