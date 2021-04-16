@@ -11,7 +11,6 @@ var pool = require("../db.js");
 var pool2 = pool.promise();
 
 //we use regex because testing for datatypes is unreliable when all string/some int
-validate(556, "aaa", 7, "0.122")
 function validate(id, name, quantity, cost) {
     //check if valid id
     var regex=/[0-9]/; //only 1-9
@@ -76,6 +75,10 @@ router.get("/search", (req, res) => {
 });
 
 router.post("/insert", (req, res) => {
+    if( validate(req.body.part_id,req.body.name,req.body.quantity_available,req.body.current_cost)  == -1){
+        return res.status(400).send('BAD_DATATYPES')
+    }
+
     var query = toUnnamed("INSERT into mydb.inventory_part VALUES(:part_id, :name, :quantity_available, :current_cost)", {
         part_id: req.body.part_id,
         name: req.body.name,
@@ -102,7 +105,7 @@ router.post("/insert", (req, res) => {
 });
 
 
-//i.e. http://localhost:port/inventory/parts/insertMultiple
+//this route is really never used...
 router.post("/insertMultiple", (req, res) => {
     (async function sendquery(param) {
         queries = []
@@ -134,6 +137,10 @@ router.post("/insertMultiple", (req, res) => {
 
 //i.e. http://localhost:port/inventory/parts/modify
 router.post("/modify", (req, res) => {
+    if( validate(req.body.part_id,req.body.name,req.body.quantity_available,req.body.current_cost)  == -1){
+        return res.status(400).send('BAD_DATATYPES')
+    }
+
     (async function sendquery(param) {
         queries = []
 
@@ -144,7 +151,7 @@ router.post("/modify", (req, res) => {
             current_cost: req.body.current_cost
         });
         if (req.body.part_id < 0) {
-            res.status(400).send('DELETED_PART')
+            return res.status(400).send('DELETED_PART')
         }
 
         queries.push(pool2.query(query[0], query[1]));
@@ -218,33 +225,7 @@ router.post("/delete", (req, res) => {
 
 
 //http://localhost:3500/inventory/buy
-/*
-{
-  "customer": {
-  "net_id": "bcd180003",
-  "group_id": 357
-  },
-  
-  "cart": [
-    {
-      "item": {
-        "part_id": 12345,
-        "current_cost": 0.01
-      },
-      "quantity": 2,
-      "total": 0.14
-    },
-    {
-      "item": {
-        "part_id": 56789,
-        "current_cost": 12.00
-      },
-      "quantity": 3,
-      "total": 0.14
-    }
-  ]
-}
-*/
+//include validate into this
 router.post("/buy", (req, res) => {
     (async function sendquery(param) {
         queries = []
@@ -253,16 +234,25 @@ router.post("/buy", (req, res) => {
         //CHECK: does the 
         queries = []
         var pool2 = pool.promise();
-        var query = toUnnamed("SELECT * FROM mydb.Group_has_student ghs WHERE ghs.net_id= :id AND ghs.group_id = :group_id", {
-            id: req.body.cart[i].item.net_id,
+        
+        console.log("netid, groupid", req.body.customer.net_id,req.body.customer.group_id)
+        var query = toUnnamed("SELECT * FROM mydb.Group_has_student ghs WHERE ghs.net_id= :net_id AND ghs.group_id = :group_id", {
+            net_id: req.body.customer.net_id,
             group_id: req.body.customer.group_id
         });
         queries.push(pool2.query(query[0], query[1]));
 
         var results = await Promise.all(queries);
-        results.forEach(([rows, fields]) => { if (rows.length != 0) { status = 400; console.log("The student,group pair already exissts"); } });
 
-        if (status = 400) {
+        results.forEach(([rows, fields]) => { 
+            if (rows.length == 0) { 
+                console.log("ROWS", rows); 
+                status = 400; console.log("The student,group pair doesn't exist"); 
+            }
+        });
+      
+
+        if (status == 400) {
             return res.status(400).send("STUDENT_GROUP_MISMATCH");
         }
 
@@ -376,6 +366,7 @@ router.post("/upload", (req, res) => {
                         console.log("That part exists, and is entirely identical to one in the database. Will not be inserted.")
                         newPart = 0
                         numduplicate = numduplicate + 1;
+                        status=400; //added
                     }
                 });
 
