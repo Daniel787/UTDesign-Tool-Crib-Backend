@@ -14,6 +14,31 @@ router.get("/", (req, res) => {
   })
 });
 
+router.get("/groups", (req, res) => {
+
+  myquery = 
+   "SELECT  ghs.net_id, s.name, s.email, s.utd_id, s.student_hold, ghs.group_id, g.group_name, g.group_sponsor "
+  +"FROM mydb.group_has_student ghs, mydb.student s, mydb.groups g "
+  +"WHERE ghs.net_id = s.net_id AND ghs.group_id = g.group_id "
+  +"ORDER BY ghs.net_id, ghs.group_id;"
+
+  if (req.query.json == "true") { 
+    myquery = 
+     "SELECT JSON_OBJECT('net_id', ghs.net_id, 'name', s.name, 'email', s.email, 'utd_id', s.utd_id, 'hold', s.student_hold, 'groups', JSON_ARRAYAGG(JSON_OBJECT('group_id', ghs.group_id, 'group_name', g.group_name, 'group_sponsor', g.group_sponsor))) student "
+    +"FROM mydb.group_has_student ghs, mydb.student s, mydb.groups g "
+    +"WHERE ghs.net_id = s.net_id AND ghs.group_id = g.group_id "
+    +"GROUP BY ghs.net_id "
+    +"ORDER BY ghs.net_id, ghs.group_id;"
+  }
+  
+  pool.query(myquery, function (err, rows, fields) {
+    if (err) console.log(err)
+    res.json(rows);
+  })
+});
+
+
+
 //i.e. http://localhost:port/student/search?net_id=180004
 router.get("/search", (req, res) => {
   //arguments
