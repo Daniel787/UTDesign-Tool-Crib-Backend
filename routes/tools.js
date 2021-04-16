@@ -424,13 +424,9 @@ router.post("/upload", (req, res) => {
         var id = req.body[i].tool_id
         var name = req.body[i].name
 
-        if(validate(id, name) == -1){
-          return res.status(400).send("BAD_DATATYPES");
-        }; //perform data-type checks
-
         //console.log("name: " + name+"    email: " + email+"     id: " + id)
         //this check fails, but it isn't technically necessary, the insert will just fail
-        if (id == null || name == null || id == '' || name == '') {
+        if (id == null || name == null || id == '' || name == '' || validate(id, name) == -1 ) {
           console.log("tool " + i + " has a null field, skipping...")
         }
         else {
@@ -453,6 +449,7 @@ router.post("/upload", (req, res) => {
               console.log("That tool exists, and is entirely identical to one in the database. Will not insert"); 
               newTool = 0; 
               numduplicate= numduplicate +1; 
+              status=400; //added
             } 
           });
           queries = []
@@ -501,10 +498,10 @@ router.post("/upload", (req, res) => {
       "numtotal": numrows, "numduplicate": numduplicate, "numsuccess": numsuccess, "numfailed": numfailed}
 
       if (status == 400) {
-          return res.status(status).json(myjson);
+          return res.json(myjson);
       }
       else {
-          return res.status(status).send("SUCCESS");
+          return res.send("SUCCESS");
       }
 
 
