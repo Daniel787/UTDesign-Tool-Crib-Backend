@@ -15,7 +15,7 @@ router.get("/", (req, res) => {
   })
 });
 
-router.get("/members", (req, res) => {
+router.get("/withmembers", (req, res) => {
 
   myquery =
     "SELECT ghs.group_id, g.group_name, g.group_sponsor, ghs.net_id, s.name, s.email, s.utd_id, s.student_hold  "
@@ -97,19 +97,7 @@ router.get("/detailed2", (req, res) => {
   })
 });
 
-//i.e. http://localhost:port/group/search?id=357
-router.get("/search", (req, res) => {
-  //arguments
-  var id = req.query.id
-
-  myquery = "SELECT * FROM mydb.groups WHERE group_id=?"
-  pool.query(myquery, [id], function (err, rows, fields) {
-    if (err) console.log(err)
-    res.json(rows);
-  })
-});
-
-router.get("/members/search", (req, res) => {
+router.get("/withmembers/search", (req, res) => {
 
   var myquery;
   //csv
@@ -137,7 +125,7 @@ router.get("/members/search", (req, res) => {
   }
 
   //json
-  if (req.query.json = "true") {
+  if (req.query.json == "true") {
     if (req.query.group_id) {
       myquery = toUnnamed(
         "SELECT JSON_OBJECT('group_id', ghs.group_id, 'group_name', g.group_name, 'group_sponsor', g.group_sponsor, 'students', JSON_ARRAYAGG(JSON_OBJECT('net_id', ghs.net_id, 'name', s.name, 'email', s.email, 'utd_id', s.utd_id, 'hold', s.student_hold))) `group` "
@@ -164,18 +152,6 @@ router.get("/members/search", (req, res) => {
     }
   }
   pool.query(myquery[0], myquery[1], function (err, rows, fields) {
-    if (err) console.log(err)
-    res.json(rows);
-  })
-});
-
-//i.e. http://localhost:port/group/searchname?name =TeamName
-router.get("/searchname", (req, res) => {
-  //arguments
-  var name = req.query.name
-
-  myquery = "SELECT * FROM mydb.groups WHERE LOWER(group_name) LIKE LOWER(CONCAT('%', ?, '%'))"
-  pool.query(myquery, [name], function (err, rows, fields) {
     if (err) console.log(err)
     res.json(rows);
   })
