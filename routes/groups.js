@@ -6,6 +6,17 @@ var pool = require("../db.js");
 //sql connection
 var pool = require('../db.js')
 
+function validate(id, name, sponsor) {
+  //check if valid id
+  var regex=/[0-9]/; //only 1-9
+  var letters=/[a-zA-Z]/
+  if(! regex.test(id) || letters.test(id)){
+      console.log("A")
+      return -1;
+  }
+  return 1;
+}
+
 router.get("/", (req, res) => {
 
   myquery = "SELECT * FROM mydb.groups"
@@ -161,6 +172,102 @@ router.post("/modify", (req, res) => {
       return res.status(status).send("SQL_ERROR");
     }
   })();
+});
+
+router.post("/insert", (req, res) => {
+  var numduplicate = 0, numsuccess = 0, numfailed = 0;
+
+  (async function sendquery(param) {
+      newtuples=[]
+      oldtuples=[]
+      failedinserts=[]
+      status=200;
+
+      var id= req.body.group_id;
+      var name= req.body.group_name;
+      var sponsor= req.body.group_sponsor;
+
+      var proceed=1;
+      //easy checks that don't require queries
+      if( (validate(id,name,sponsor)  == -1) || id < 0 || 
+          id== "" || id== null || name == "" || name == null || sponsor== "" || sponsor == null ){
+          proceed=0;
+          failedinserts.push({ "group_id": id, "name": name, "sponsor": sponsor});
+          numfailed = numfailed+1;
+          var myjson = {
+              "conflictinserts": { "old": oldtuples, "new": newtuples }, "failedinserts": failedinserts,
+              "numtotal": 1, "numduplicate": numduplicate, "numsuccess": numsuccess, "numfailed": numfailed
+          }
+          return res.json(myjson);
+      }
+
+      var pool2 = pool.promise();
+      var queries=[]
+      //we want to examine matching group id, but difference something else
+      var query = toUnnamed("SELECT * FROM mydb.Groups g WHERE g.group_id = :group_id AND (group_name <> :group_name OR"
+          + " group_sponsor <> :group_sponsor)", {
+          group_id: id,
+          group_name: name,
+       
+          group_sponsor: sponsor
+      });
+      queries.push(pool2.query(query[0], query[1]));
+      var results = await Promise.all(queries);
+
+      results.forEach(([rows, fields]) => {
+          if (rows.length == 1) {
+              oldtuples.push({ "group_id": rows[0].group_id, "name": rows[0].name, "sponsor": rows[0].sponsor })
+              newtuples.push({ "group_id": parseInt(id), "name": name, "sponsor": parseInt(sponsor)})
+              console.log("That group exists, but you have supplied different values for one of the attributes");
+              status = 400;
+              proceed = 0;
+          }
+      });
+
+      var queries=[]
+      var pool2 = pool.promise();
+      //matching everything
+      var query = toUnnamed("SELECT * FROM mydb.Groups g WHERE g.group_id = :group_id AND group_name = :group_name AND"
+          + " group_sponsor = :group_sponsor", {
+          group_id: id,
+          group_name: name,
+          group_sponsor: sponsor
+      });
+      queries.push(pool2.query(query[0], query[1]));
+      var results = await Promise.all(queries);
+
+      results.forEach(([rows, fields]) => {
+          if (rows.length == 1) {
+              console.log("That group exists, and is entirely identical to one in the database. Will not be inserted.");
+              status = 400;
+              numduplicate = numduplicate + 1 
+              proceed = 0;
+          }
+      });
+
+      if(proceed){
+          var queries = []
+          var query = toUnnamed("INSERT into mydb.Groups VALUES(:group_id, :name, :sponsor)", {
+              group_id: id,
+              name: name,
+              sponsor: sponsor
+          });
+          queries.push(pool2.query(query[0], query[1]));
+          await Promise.all(queries).catch(() => { console.log("Some sql error in insertion"); status = 400; numfailed=numfailed+1;});
+      }
+      numsuccess= 1-(oldtuples.length + failedinserts.length + numduplicate);
+      myjson = {
+          "conflictinserts": { "old": oldtuples, "new": newtuples }, "failedinserts": failedinserts,
+          "numtotal": 1, "numduplicate": numduplicate, "numsuccess": numsuccess, "numfailed": numfailed
+      }
+
+      if (status == 400) {
+          return res.json(myjson);
+      }
+      else {
+          return res.send("SUCCESS");
+      }
+  })();   
 });
 
 module.exports = router;
