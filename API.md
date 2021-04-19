@@ -169,7 +169,7 @@ Success Response : Status `200` and JSON:
     {
         "tool_id": {INT},
         "name": {STRING},
-        "status": {STRING} in {"Available", "Rented", "Overdue"}
+        "status": {STRING} in {"Available", "Rented", "Overdue", "Deleted"}
         "group_id": {INT},
         "net_id": {STRING},
         "checkout_date": ex."2021-02-14 04:01:00.000",
@@ -177,7 +177,6 @@ Success Response : Status `200` and JSON:
     },...
 ]
 ```
-Note that "Deleted" tools are omitted from this list and must be searched for manually.
 For status == "Available", all columns afterwards have null value.
 
 ### Search tool by id or name
