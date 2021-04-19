@@ -21,115 +21,32 @@ function validate(id, name) {
 }
 
 //i.e. http://localhost:port/inventory/tools
+//doesnt show deleted tools
 router.get("/", (req, res) => {
   myquery =
-    "SELECT * FROM mydb.rental_tool "
-    + "natural join "
-    + "( "
-    + "  SELECT rtr.tool_id tool_id, 'Rented' status, t.group_id group_id, t.net_id net_id, t.date checkout_date, "
-    + "  (cast(from_unixtime(rtr.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date "
-    + "  FROM mydb.transaction t , mydb.rented_tool rtr "
-    + "  WHERE (t.transaction_id = rtr.transaction_id)"
-    + "    AND (rtr.returned_date IS NULL) "
-    + "    AND NOW() <= (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) "
-    + "  UNION "
-    + "  SELECT rto.tool_id, 'Overdue' status, t.group_id group_id, t.net_id net_id, t.date checkout_date, "
-    + "  (cast(from_unixtime(rto.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date "
-    + "  FROM mydb.transaction t , mydb.rented_tool rto "
-    + "  WHERE (t.transaction_id = rto.transaction_id)"
-    + "    AND (rto.returned_date IS NULL)  "
-    + "    AND NOW() > (cast(from_unixtime(rto.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3)))  "
-    + "  UNION "
-    + "  SELECT rta.tool_id, 'Available' status, null group_id, null net_id, null checkout_date, null due_date "
-    + "  FROM mydb.rental_tool rta "
-    + "  WHERE rta.tool_id  "
-    + "    NOT IN (SELECT rt.tool_id "
-    + "      FROM mydb.transaction t, mydb.rented_tool rt "
-    + "      WHERE (t.transaction_id = rt.transaction_id) "
-    + "        AND(rt.returned_date IS NULL) "
-    + "      ORDER BY REVERSE (t.date)) "
-    + ") u;"
+     "SELECT * FROM mydb.tool_status "
+    +"WHERE tool_status.tool_id >= 0;"
   pool.query(myquery, function (err, rows, fields) {
     if (err) console.log(err);
-    for(var i=0; i < rows.length; i++){
-      console.log(rows[i])
-      if(rows[i].tool_id < 0){ //I don't know how to modify the query so I'm doing it this way
-        console.log("not returning this")
-        rows.splice(i, 1)
-      }
-    }
     res.json(rows);
   });
 });
 
 //i.e. http://localhost:port/inventory/tools/search?tool_id=111
+//DOES show deleted tools
 router.get("/search", (req, res) => {
   //set query by arguments 'tool_id' or 'name'
   if (req.query.tool_id) {
-    if(req.query.tool_id < 0){
-      return res.status(400).send("DELETED_TOOL");
-    }
-
     var myquery = toUnnamed(
-      "SELECT * FROM mydb.rental_tool "
-      + "natural join "
-      + "( "
-      + "  SELECT rtr.tool_id tool_id, 'Rented' status, t.group_id group_id, t.net_id net_id, t.date checkout_date, "
-      + "  (cast(from_unixtime(rtd.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date "
-      + "  FROM mydb.transaction t , mydb.rented_tool rtr, mydb.rented_tool rtd"
-      + "  WHERE (t.transaction_id = rtr.transaction_id) "
-      + "    AND (rtr.returned_date IS NULL) "
-      + "    AND NOW() <= (cast(from_unixtime(rtd.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) "
-      + "  UNION "
-      + "  SELECT rto.tool_id, 'Overdue' status, t.group_id group_id, t.net_id net_id, t.date checkout_date, "
-      + "  (cast(from_unixtime(rto.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date "
-      + "  FROM mydb.transaction t , mydb.rented_tool rto "
-      + "  WHERE (t.transaction_id = rto.transaction_id) "
-      + "    AND (rto.returned_date IS NULL)  "
-      + "    AND NOW() > (cast(from_unixtime(rto.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3)))  "
-      + "  UNION "
-      + "  SELECT rta.tool_id, 'Available' status, null group_id, null net_id, null checkout_date, null due_date "
-      + "  FROM mydb.rental_tool rta "
-      + "  WHERE rta.tool_id  "
-      + "    NOT IN (SELECT rt.tool_id "
-      + "      FROM mydb.transaction t, mydb.rented_tool rt "
-      + "      WHERE (t.transaction_id = rt.transaction_id) "
-      + "        AND(rt.returned_date IS NULL) "
-      + "      ORDER BY REVERSE (t.date)) "
-      + ") u "
-      + "WHERE u.tool_id = :tool_id;", {
+       "SELECT * FROM mydb.tool_status "
+      +"WHERE tool_status.tool_id IN (:tool_id , -1* :tool_id);", {
       tool_id: req.query.tool_id
     });
   }
   else if (req.query.name) {
     var myquery = toUnnamed(
-      "SELECT * FROM mydb.rental_tool "
-      + "natural join "
-      + "( "
-      + "  SELECT rtr.tool_id tool_id, 'Rented' status, t.group_id group_id, t.net_id net_id, t.date checkout_date, "
-      + "  (cast(from_unixtime(rtr.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date "
-      + "  FROM mydb.transaction t , mydb.rented_tool rtr "
-      + "  WHERE (t.transaction_id = rtr.transaction_id) "
-      + "    AND (rtr.returned_date IS NULL) "
-      + "    AND NOW() <= (cast(from_unixtime(rtr.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) "
-      + "  UNION "
-      + "  SELECT rto.tool_id, 'Overdue' status, t.group_id group_id, t.net_id net_id, t.date checkout_date, "
-      + "  (cast(from_unixtime(rto.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date "
-      + "  FROM mydb.transaction t , mydb.rented_tool rto "
-      + "  WHERE (t.transaction_id = rto.transaction_id) "
-      + "    AND (rto.returned_date IS NULL)  "
-      + "    AND NOW() > (cast(from_unixtime(rto.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3)))  "
-      + "  UNION "
-      + "  SELECT rta.tool_id, 'Available' status, null group_id, null net_id, null checkout_date, null due_date "
-      + "  FROM mydb.rental_tool rta "
-      + "  WHERE rta.tool_id  "
-      + "    NOT IN (SELECT rt.tool_id "
-      + "      FROM mydb.transaction t, mydb.rented_tool rt "
-      + "      WHERE (t.transaction_id = rt.transaction_id) "
-      + "        AND(rt.returned_date IS NULL) "
-      + "      ORDER BY REVERSE (t.date)) "
-      + ") u "
-      + "WHERE u.tool_id in (SELECT tool.tool_id FROM mydb.rental_tool tool WHERE LOWER(tool.name) LIKE LOWER(:name));", {
+       "SELECT * FROM mydb.tool_status "
+      +"WHERE tool_status.tool_id IN (SELECT tool.tool_id FROM mydb.rental_tool tool WHERE LOWER(tool.name) LIKE LOWER(:name));", {
       name: "%" + req.query.name + "%"
     });
   }
