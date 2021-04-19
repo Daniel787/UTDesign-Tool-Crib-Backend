@@ -257,18 +257,18 @@ CREATE VIEW mydb.tool_status AS
 SELECT * FROM mydb.rental_tool
 natural join
 (SELECT rtr.tool_id, "Rented" status, t.group_id group_id, t.net_id net_id, t.date checkout_date, 
-(cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date 
+(cast(from_unixtime(rtr.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date 
 FROM mydb.transaction t , mydb.rented_tool rtr
 WHERE (t.transaction_id = rtr.transaction_id)
 	AND (rtr.returned_date IS NULL)
-	AND NOW() <= (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3)))
+	AND NOW() <= (cast(from_unixtime(rtr.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3)))
 UNION
 SELECT rto.tool_id, "Overdue" status, t.group_id group_id, t.net_id net_id, t.date checkout_date, 
-(cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date 
+(cast(from_unixtime(rto.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date 
 FROM mydb.transaction t , mydb.rented_tool rto
 WHERE (t.transaction_id = rto.transaction_id)
 	AND (rto.returned_date IS NULL) 
-	AND NOW() > (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) 
+	AND NOW() > (cast(from_unixtime(rto.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) 
 UNION
 SELECT rta.tool_id, "Available" status, null group_id, null net_id, null checkout_date, null due_date
 FROM mydb.rental_tool rta
@@ -347,7 +347,7 @@ insert into mydb.rented_tool (transaction_id, tool_id, returned_date, notificati
 (3, 111,  null,                 2, false),
 (4, 333, '2021-02-18T06:00:00', 2, false),
 (5, 333, '2021-02-18T08:00:00', 24, false),
-(6, 222, '2021-02-19T07:00:00', 2, false),
+(6, 222, '2021-02-19T07:00:00', 3, false),
 (7, 222, null,                  2, false),
 (7, 444, null,                  24, false);
 
