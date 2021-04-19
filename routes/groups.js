@@ -48,49 +48,8 @@ router.get("/withmembers", (req, res) => {
   })
 });
 
+
 router.get("/detailed", (req, res) => {
-
-  myquery =
-    "SELECT s.*, u.tool_id, u.status, u.checkout_date, u.due_date FROM "
-    + "(SELECT ghs.group_id, ghs.net_id, s.name, s.email, s.utd_id, s.student_hold from mydb.group_has_student ghs, mydb.student s "
-    + "WHERE ghs.net_id = s.net_id "
-    + "ORDER BY ghs.group_id, ghs.net_id) s "
-    + "LEFT JOIN "
-    + "( "
-    + "  SELECT rtr.tool_id, 'Rented' status, t.group_id group_id, t.net_id net_id, t.date checkout_date,  "
-    + "    (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date  "
-    + "  FROM mydb.transaction t , mydb.rented_tool rtr "
-    + "  WHERE (t.transaction_id = rtr.transaction_id) "
-    + "    AND (rtr.returned_date IS NULL) "
-    + "    AND NOW() <= (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) "
-    + "  UNION "
-    + "  SELECT rto.tool_id, 'Overdue' status, t.group_id group_id, t.net_id net_id, t.date checkout_date,  "
-    + "    (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date  "
-    + "  FROM mydb.transaction t , mydb.rented_tool rto "
-    + "  WHERE (t.transaction_id = rto.transaction_id) "
-    + "    AND (rto.returned_date IS NULL)  "
-    + "    AND NOW() > (cast(from_unixtime(2*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3)))  "
-    + "  UNION "
-    + "  SELECT rta.tool_id, 'Available' status, null group_id, null net_id, null checkout_date, null due_date "
-    + "  FROM mydb.rental_tool rta "
-    + "  WHERE rta.tool_id  "
-    + "    NOT IN (SELECT rt.tool_id "
-    + "      FROM mydb.transaction t, mydb.rented_tool rt "
-    + "      WHERE (t.transaction_id = rt.transaction_id) "
-    + "        AND(rt.returned_date IS NULL) "
-    + "      ORDER BY REVERSE (t.date)) "
-    + ") u "
-    + "ON "
-    + "u.net_id = s.net_id AND u.group_id = s.group_id;"
-
-  pool.query(myquery, function (err, rows, fields) {
-    if (err) console.log(err)
-
-    res.json(rows);
-  })
-});
-
-router.get("/detailed2", (req, res) => {
   myquery =
     "SELECT g.group_id, JSON_ARRAYAGG(JSON_OBJECT('net_id', g.net_id, 'name', g.name, 'tools', g.tools)) students "
     + "FROM  "
