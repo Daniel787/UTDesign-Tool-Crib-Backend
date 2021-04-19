@@ -146,7 +146,7 @@ router.get("/search", (req, res) => {
 });
 
 router.post("/modify", (req, res) => {
-  if(validate(tool_id, req.body.name) == -1){
+  if(validate(req.body.tool_id, req.body.name) == -1){
     return res.status(400).send("BAD_DATATYPES");
   }; 
 
