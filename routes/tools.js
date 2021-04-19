@@ -214,10 +214,9 @@ router.post("/delete", (req, res) => {
 
     console.log("down here")
     queries = []
-    var query = toUnnamed("SET FOREIGN_KEY_CHECKS=0;" 
-                          +" UPDATE `mydb`.`Rented_Tool` SET `tool_id` = :tool_id * -1 WHERE (`tool_id` = :tool_id);"
-                          + "UPDATE `mydb`.`Rental_Tool` SET `tool_id` = :tool_id * -1 WHERE (`tool_id` = :tool_id);"
-                          + "SET FOREIGN_KEY_CHECKS=1; ", {
+    var query = toUnnamed( 
+                          "UPDATE `mydb`.`Rental_Tool` SET `tool_id` = :tool_id * -1 WHERE (`tool_id` = :tool_id);"
+                           , {
       tool_id: tool_id,
     });
 
