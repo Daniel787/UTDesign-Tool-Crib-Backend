@@ -24,8 +24,7 @@ function validate(id, name) {
 //doesnt show deleted tools
 router.get("/", (req, res) => {
   myquery =
-     "SELECT * FROM mydb.tool_status "
-    +"WHERE tool_status.tool_id >= 0;"
+     "SELECT * FROM mydb.tool_status;"
   pool.query(myquery, function (err, rows, fields) {
     if (err) console.log(err);
     res.json(rows);
