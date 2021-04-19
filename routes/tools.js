@@ -416,28 +416,27 @@ router.post("/rent", (req, res) => {
     var superrent=0;
   }
 
+  console.log(req.body);
+
   (async function sendquery(param) {
     queries = []
     const pool2 = pool.promise();
     var id = req.body.customer.net_id
+    for (i = 0; i < req.body.cart.length; i++) {
+      if(validate(req.body.cart[i].item.tool_id, " ") == -1){
+        return res.status(400).send("BAD_DATATYPES");
+      }; 
+    }
 
     //when superrent is 1, the following check does not occur
     if(! superrent){
-      for (i = 0; i < req.body.cart.length; i++) {
-        //CHECK: does the student have a hold?
-
-        if(validate(req.body.cart[i].item.tool_id, " ") == -1){
-          return res.status(400).send("BAD_DATATYPES");
-        }; 
-
-        var query = toUnnamed(
-          "SELECT * FROM mydb.student WHERE student_hold = true AND net_id= :student_id", {
-          tool_id: req.body.cart[i].item.tool_id,
-          student_id: req.body.customer.net_id
-        });
-        
-        queries.push(pool2.query(query[0], query[1]));
-      }
+      //CHECK: does the student have a hold?
+      var query = toUnnamed(
+        "SELECT * FROM mydb.student WHERE student_hold = true AND net_id= :student_id", {
+        student_id: req.body.customer.net_id
+      });
+      
+      queries.push(pool2.query(query[0], query[1]));
 
       //console.log("NUMQUERIES: " + queries.length);
       var results = await Promise.all(queries);
@@ -536,7 +535,7 @@ router.post("/rent", (req, res) => {
     for (i = 0; i < req.body.cart.length; i++) {
       var tool_name = req.body.cart[i].item.name
       var id = req.body.customer.net_id
-      var email = 'sudhi.jagadeeshi@gmail.com'
+      var email = 'toolcributd@gmail.com'
       var temp = new Date(Date.now())
       //datedue.setTime(datedue.getTime() + (req.body.cart[i].item.hours*60*60*1000)); //add required number of hours
       var datedue = new Date(temp.getTime() + (6 * 1000)); //for testing, add 6 seconds
@@ -591,8 +590,6 @@ router.post("/return", (req, res) => {
     queries.push(pool2.query(query[0], query[1]));
     //}
 
-    //console.log("NUMQUERIES: " + queries.length);
-
     var results = await Promise.all(queries);
 
     valid = []
@@ -609,22 +606,45 @@ router.post("/return", (req, res) => {
 
     //else transaction is valid, so insert the transaction row for the tool
     console.log("That tool is able to be returned...");
-    queries = []
 
-    //for (i = 0; i < req.body.cart.length; i++) {
-    var query = toUnnamed("UPDATE mydb.rented_tool SET returned_date = NOW(3) WHERE tool_id = :id AND returned_date is NULL;"
-      + "UPDATE mydb.student SET student_hold=0 WHERE net_id = :student_id", {
-      id: id,
+    queries=[]
+    var id= req.query.tool_id
+    console.log("id", id)
+    var query = toUnnamed("UPDATE mydb.rented_tool SET returned_date = NOW(3) WHERE tool_id = :id AND returned_date is NULL", {
+      id: id
+    });
+
+    queries.push(pool2.query(query[0], query[1]));
+    
+    results = await Promise.all(queries);
+
+    queries = []              //added
+    var query = toUnnamed("select mydb.transaction.net_id "
+                        + "from mydb.transaction, mydb.rented_tool, mydb.rental_tool, mydb.student"
+                        +  " where mydb.transaction.transaction_id= mydb.rented_tool.transaction_id"
+                        + " and mydb.transaction.net_id = mydb.student.net_id"
+                        + " and mydb.rented_tool.tool_id = mydb.rental_tool.tool_id "
+                        +  "and mydb.rented_tool.returned_date is null and mydb.rental_tool.tool_id > 0 and mydb.transaction.net_id = :student_id;", {
       student_id: studentRenting
     });
 
     queries.push(pool2.query(query[0], query[1]));
-    // }
-
-    console.log("NUMQUERIES: " + queries.length);
-
     results = await Promise.all(queries);
+    var removeHold=1;
+    results.forEach(([rows, fields]) => { if (rows.length != 0) { removeHold=0; console.log("This student has multiple overdue tools, and has only returned one of them. His hold will not be removed."); status = 400; } });
 
+    console.log("sR", studentRenting)
+    if(removeHold){
+      queries = []
+      const pool2 = pool.promise();  
+      var query = toUnnamed("UPDATE mydb.Student SET student_hold=0 WHERE net_id = :student_id", {
+        student_id: studentRenting
+      });
+
+      queries.push(pool2.query(query[0], query[1]));
+      results = await Promise.all(queries);
+    }
+    
     res.send("finished");
 
   })();

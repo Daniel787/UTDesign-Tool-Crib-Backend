@@ -265,9 +265,31 @@ router.post("/delete", (req, res) => {
 router.post("/buy", (req, res) => {
     (async function sendquery(param) {
         queries = []
-        status = 200;
+        var status = 200;
 
-        //CHECK: does the 
+        //CHECK: does the student have a hold?
+        var pool2= pool.promise();
+        var query = toUnnamed(
+            "SELECT * FROM mydb.student WHERE student_hold = true AND net_id= :student_id", {
+            student_id: req.body.customer.net_id
+        });
+        
+        queries.push(pool2.query(query[0], query[1]));
+        var results = await Promise.all(queries);
+        var valid = []
+
+        results.forEach(([rows, fields]) => { if (rows.length == 1) { console.log("That student has a hold"); console.log(rows.length); status = 400; } });
+        results.forEach(([rows, fields]) => { valid.push(rows[0]); console.log(rows[0]); });
+
+        if (status != 200) {
+        return res.status(400).send('STUDENT_HOLD');
+        }
+
+        console.log("The student does not have a hold")
+        queries = []
+        
+
+        //CHECK: does the student, group pair exist?
         queries = []
         var pool2 = pool.promise();
         
@@ -287,7 +309,6 @@ router.post("/buy", (req, res) => {
             }
         });
       
-
         if (status == 400) {
             return res.status(400).send("STUDENT_GROUP_MISMATCH");
         }
