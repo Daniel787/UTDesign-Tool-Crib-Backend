@@ -177,6 +177,7 @@ Success Response : Status `200` and JSON:
     },...
 ]
 ```
+Note that "Deleted" tools are omitted from this list and must be searched for manually.
 For status == "Available", all columns afterwards have null value.
 
 ### Search tool by id or name
@@ -190,7 +191,7 @@ Success Response : Status `200` and JSON:
     {
         "tool_id": {INT},
         "name": {STRING},
-        "status": {STRING} in {"Available", "Rented", "Overdue"}
+        "status": {STRING} in {"Available", "Rented", "Overdue", "Deleted"}
         "group_id": {INT},
         "net_id": {STRING},
         "checkout_date": ex."2021-02-14 04:01:00.000",
@@ -198,7 +199,8 @@ Success Response : Status `200` and JSON:
     },...
 ]
 ```
-For status == "Available", all columns afterwards have null value.
+For status == "Available" or "Deleted", all columns afterwards have null value.
+Note that searching tool_id "333" will also search for "-333" to find lazy-deleted tools.
 Note that the JSON is always an array, whether zero, one or many tools match the search criteria.
 
 Failure Response : Status `400` Bad Request and errcode in response:
