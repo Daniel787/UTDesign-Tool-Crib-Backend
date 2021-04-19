@@ -127,7 +127,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Rented_Tool` (
     FOREIGN KEY (`tool_id`)
     REFERENCES `mydb`.`Rental_Tool` (`tool_id`)
     ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
+    ON UPDATE CASCADE)
 ENGINE = InnoDB;
 
 
@@ -150,7 +150,7 @@ CREATE TABLE IF NOT EXISTS `mydb`.`Purchased_Part` (
     FOREIGN KEY (`part_id`)
     REFERENCES `mydb`.`Inventory_Part` (`part_id`)
     ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
+    ON UPDATE CASCADE)
 ENGINE = InnoDB;
 
 
