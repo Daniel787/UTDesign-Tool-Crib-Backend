@@ -96,7 +96,11 @@ Failure Response : Status `400` Bad Request and JSON in response:
             "quantity_available": {},
             "current_cost:": {}
         }
-    ]
+    ],
+    "numtotal": {INT},
+    "numduplicate": {INT},
+    "numsuccess": {INT},
+    "numfailed": {INT}
 }
 ```
 
@@ -254,7 +258,11 @@ Failure Response : Status `400` Bad Request and JSON in response:
             "part_id": {},
             "name": {STRING},
         }
-    ]
+    ],
+    "numtotal": {INT},
+    "numduplicate": {INT},
+    "numsuccess": {INT},
+    "numfailed": {INT}
 }
 ```
 
@@ -535,6 +543,134 @@ CSV version without ?json="true"
 Failure Response : Status `400` Bad Request and errcode in response:
 * 'MISSING\_PARAMS' when missing group\_id or name 
 
+### Insert a single group
+`POST`, /groups/insert
+
+Request: JSON:
+```
+{
+    "group_id":{INT},
+    "group_name":{STRING},
+    "group_sponsor":{STRING}
+}
+```
+Success Response : Status `200`
+
+Failure Response : Status `400` Bad Request and JSON in response:
+```
+{
+    "conflictinserts": {
+        "old": [
+            {
+                "group_id":{INT},
+                "group_name":{STRING},
+                "group_sponsor":{STRING}
+            }
+        ],
+        "new": [
+            {
+                "group_id":{INT},
+                "group_name":{STRING},
+                "group_sponsor":{STRING}
+            }
+        ]
+    },
+    "failedinserts": [
+        {
+            "group_id":{INT},
+            "group_name":{STRING},
+            "group_sponsor":{STRING}
+        }
+    ],
+    "numtotal": {INT},
+    "numduplicate": {INT},
+    "numsuccess": {INT},
+    "numfailed": {INT}
+}
+```
+
+### Insert a single student
+`POST`, /student/insert
+
+Request: JSON:
+```
+{
+    "net_id":{STRING},
+    "name":{STRING},
+    "email":{STRING}
+}
+```
+Success Response : Status `200`
+
+Failure Response : Status `400` Bad Request and JSON in response:
+```
+{
+    "conflictinserts": {
+        "old": [
+            {
+                "net_id":{STRING},
+                "name":{STRING},
+                "email":{STRING}
+            }
+        ],
+        "new": [
+            {
+                "net_id":{STRING},
+                "name":{STRING},
+                "email":{STRING}
+            }
+        ]
+    },
+    "failedinserts": [
+        {
+            "net_id":{STRING},
+            "name":{STRING},
+            "email":{STRING}
+        }
+    ],
+    "numtotal": {INT},
+    "numduplicate": {INT},
+    "numsuccess": {INT},
+    "numfailed": {INT}
+}
+```
+
+### Add a student to a group
+`POST`, /groups/insertMember
+
+Request: JSON:
+```
+{
+    "net_id":{STRING},
+    "group_id":{INT}
+}
+```
+Success Response : Status `200`
+
+Failure Response : Status `400` Bad Request and errcode in response:
+* 'NONEXISTENT\_STUDENT' when missing net\_id
+* 'NONEXISTENT\_GROUP' when missing group\_id
+* 'SQL_ERROR' when some unknown SQL error occurs
+
+### Delete a student from a group
+`POST`, /groups/deleteMember
+
+Request: JSON:
+```
+{
+    "net_id":{STRING},
+    "group_id":{INT}
+}
+```
+Success Response : Status `200`
+
+Failure Response : Status `400` Bad Request and errcode in response:
+* 'NONEXISTENT\_STUDENT' when missing net\_id
+* 'NONEXISTENT\_GROUP' when missing group\_id
+* 'NONEXISTENT\_PAIR' when missing group\_id, net\_id pair
+* 'SQL_ERROR' when some unknown SQL error occurs
+
+
 ### Upload a sheet of Students and Groups
 `POST`, /students/upload
 
@@ -586,6 +722,10 @@ Failure Response : Status `400` Bad Request and JSON in response:
             "quantity_available": {},
             "current_cost:": {}
         }
-    ]
+    ],
+    "numtotal": {INT},
+    "numduplicate": {INT},
+    "numsuccess": {INT},
+    "numfailed": {INT}
 }
 ```

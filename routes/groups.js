@@ -182,7 +182,7 @@ router.post("/deleteMember", (req, res) => {
       var pool2 = pool.promise();
       queries = []
 
-      var query = toUnnamed("SELECT * FROM mydb.group_has_student ghs WHERE ghs.net_id = :net_id AND ghs.group_id= group_id" , {
+      var query = toUnnamed("SELECT * FROM mydb.group_has_student ghs WHERE (ghs.net_id = :net_id AND ghs.group_id= :group_id) " , {
           net_id: net_id,
           group_id: group_id
       });
@@ -191,30 +191,30 @@ router.post("/deleteMember", (req, res) => {
 
       var status = 200;
       var results = await Promise.all(queries);
-      results.forEach(([rows, fields]) => { if (rows.length == 0) { console.log("That student group pair doesn't exist"); status = 400; } });
+      
+      results.forEach(([rows, fields]) => { console.log(rows.length); if (rows.length == 0) { console.log("That student group pair doesn't exist"); status = 400; } });
       if (status == 400) {
-          return res.status(status).send("NONEXISTENT_PAIR");
+        return res.json({ message: "NONEXISTENT_PAIR" });
       }
 
       var pool2 = pool.promise();
       console.log(net_id, group_id)
       queries = []
-      var query = toUnnamed("UPDATE mydb.group_has_student SET display=0 WHERE ghs.net_id = :net_id AND ghs.group_id= :group_id" , {
+      var query = toUnnamed("UPDATE mydb.group_has_student ghs SET display=0 WHERE ghs.net_id = :net_id AND ghs.group_id= :group_id" , {
         net_id: net_id,
         group_id: group_id
       });
   
-      console.log(query[0])
       queries.push(pool2.query(query[0], query[1]));
     
       console.log("A")
       var status = 200;
       var results = await Promise.all(queries); //.catch(() => { console.log("Deletion of pair failed."); status = 400; });
       if (status == 400) {
-          return res.send("SQL_ERROR");
+          return res.json({ message: "SQL_ERROR" });
       }
       else {
-          return res.send("SUCCESS")
+          return res.json({ message: "SUCCESS" });
       }
   })();
 });
@@ -266,7 +266,7 @@ router.post("/insertMember", (req, res) => {
       });
 
       if(status == 400){
-        return res.send("NONEXISTENT_STUDENT")
+        return res.json({ message: "NONEXISTENT_STUDENT" });
       }
 
       //Check 2- Group exists?
@@ -287,7 +287,7 @@ router.post("/insertMember", (req, res) => {
           }
       });
       if(status == 400){
-        return res.send("NONEXISTENT_GROUP")
+        return res.json({ message: "NONEXISTENT_GROUP" });
       }
 
       //Check 3- student, group pair already exists?
@@ -309,7 +309,7 @@ router.post("/insertMember", (req, res) => {
           }
       });
       if(status == 400){
-        return res.send("SUCCESS") 
+        return res.json({ message: "SUCCESS" });
       }
 
       //if(proceed){
@@ -330,10 +330,10 @@ router.post("/insertMember", (req, res) => {
       }
 
       if (status == 400) {
-          return res.json(myjson);
+          return res.json({ message: "SQL_ERROR" });
       }
       else {
-          return res.send("SUCCESS");
+        return res.json({ message: "SUCCESS" });
       }
   })();   
 });
@@ -429,7 +429,7 @@ router.post("/insert", (req, res) => {
           return res.json(myjson);
       }
       else {
-          return res.send("SUCCESS");
+        return res.json({ message: "SUCCESS" });
       }
   })();   
 });
