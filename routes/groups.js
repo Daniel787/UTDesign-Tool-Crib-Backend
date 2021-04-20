@@ -199,7 +199,7 @@ router.post("/deleteMember", (req, res) => {
       var pool2 = pool.promise();
       console.log(net_id, group_id)
       queries = []
-      var query = toUnnamed("DELETE FROM mydb.group_has_student ghs WHERE ghs.net_id = :net_id AND ghs.group_id= :group_id" , {
+      var query = toUnnamed("UPDATE mydb.group_has_student SET display=0 WHERE ghs.net_id = :net_id AND ghs.group_id= :group_id" , {
         net_id: net_id,
         group_id: group_id
       });
@@ -315,7 +315,7 @@ router.post("/insertMember", (req, res) => {
       //if(proceed){
       //Proceed to insert
       var queries = []
-      var query = toUnnamed("INSERT into mydb.Group_Has_Student VALUES(:group_id, :net_id)", {
+      var query = toUnnamed("INSERT into mydb.Group_Has_Student VALUES(:group_id, :net_id, 1)", {
           group_id: group_id,
           net_id: net_id
       });
