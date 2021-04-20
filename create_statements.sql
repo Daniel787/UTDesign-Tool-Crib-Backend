@@ -44,6 +44,7 @@ ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `mydb`.`Group_Has_Student` (
   `group_id` INT NOT NULL,
   `net_id` VARCHAR(16) NOT NULL,
+  `display` INT NOT NULL,
   PRIMARY KEY (`group_id`, `net_id`),
   INDEX `fk_GrouphasStudent_Group1_idx` (`group_id` ASC) VISIBLE,
   INDEX `fk_GrouphasStudent_Student1_idx` (`net_id` ASC) VISIBLE,
@@ -325,15 +326,15 @@ insert into mydb.groups (group_id, group_name, group_sponsor) VALUES
 (01, "electrical group", "bishop");
 
 insert into mydb.group_has_student (group_id, net_id) VALUES
-(24,  'abc180002'),
-(24,  'adf180004'),
-(357, 'bcd180003'),
-(357, 'bef180005'),
-(357, 'bgh180007'),
-(01,  'axy190000'),
-(01,  'bxy190001'),
-(01,  'aaa155001'),
-(357,  'aaa155001');
+(24,  'abc180002',1),
+(24,  'adf180004',1),
+(357, 'bcd180003',1),
+(357, 'bef180005',1),
+(357, 'bgh180007',1),
+(01,  'axy190000',1),
+(01,  'bxy190001',1),
+(01,  'aaa155001',1),
+(357,  'aaa155001',1);
 
 
 insert into mydb.rental_tool (tool_id, name) VALUES

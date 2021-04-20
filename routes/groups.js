@@ -174,6 +174,51 @@ router.post("/modify", (req, res) => {
   })();
 });
 
+router.post("/deleteMember", (req, res) => {
+  var net_id= req.body.net_id;
+  var group_id= req.body.group_id;
+
+  (async function sendquery(param) {
+      var pool2 = pool.promise();
+      queries = []
+
+      var query = toUnnamed("SELECT * FROM mydb.group_has_student ghs WHERE ghs.net_id = :net_id AND ghs.group_id= group_id" , {
+          net_id: net_id,
+          group_id: group_id
+      });
+      queries.push(pool2.query(query[0], query[1]));
+    
+
+      var status = 200;
+      var results = await Promise.all(queries);
+      results.forEach(([rows, fields]) => { if (rows.length == 0) { console.log("That student group pair doesn't exist"); status = 400; } });
+      if (status == 400) {
+          return res.status(status).send("NONEXISTENT_PAIR");
+      }
+
+      var pool2 = pool.promise();
+      console.log(net_id, group_id)
+      queries = []
+      var query = toUnnamed("DELETE FROM mydb.group_has_student ghs WHERE ghs.net_id = :net_id AND ghs.group_id= :group_id" , {
+        net_id: net_id,
+        group_id: group_id
+      });
+  
+      console.log(query[0])
+      queries.push(pool2.query(query[0], query[1]));
+    
+      console.log("A")
+      var status = 200;
+      var results = await Promise.all(queries); //.catch(() => { console.log("Deletion of pair failed."); status = 400; });
+      if (status == 400) {
+          return res.send("SQL_ERROR");
+      }
+      else {
+          return res.send("SUCCESS")
+      }
+  })();
+});
+
 //This route to add a student to a group
 router.post("/insertMember", (req, res) => {
   var numduplicate = 0, numsuccess = 0, numfailed = 0;
