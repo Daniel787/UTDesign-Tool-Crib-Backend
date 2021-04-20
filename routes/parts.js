@@ -239,10 +239,9 @@ router.post("/delete", (req, res) => {
 
         console.log("down here")
         queries = []
-        var query = toUnnamed("SET FOREIGN_KEY_CHECKS=0;"
+        var query = toUnnamed(
             + " UPDATE `mydb`.`Inventory_Part` SET `part_id` = :part_id * -1 WHERE (`part_id` = :part_id);"
-            + "UPDATE `mydb`.`Purchased_Part` SET `part_id` = :part_id * -1 WHERE (`part_id` = :part_id);"
-            + "SET FOREIGN_KEY_CHECKS=1; ", {
+            , {
             part_id: part_id,
         });
 

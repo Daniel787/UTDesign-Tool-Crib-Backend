@@ -174,6 +174,125 @@ router.post("/modify", (req, res) => {
   })();
 });
 
+//This route to add a student to a group
+router.post("/insertMember", (req, res) => {
+  var numduplicate = 0, numsuccess = 0, numfailed = 0;
+
+  (async function sendquery(param) {
+      newtuples=[]
+      oldtuples=[]
+      failedinserts=[]
+      status=200;
+
+      var net_id= req.body.net_id;
+      var group_id= req.body.group_id;
+
+      var proceed=1;
+      //easy checks that don't require queries
+      if( net_id < 0 || group_id < 0 || 
+          net_id== "" || net_id== null || group_id == "" || group_id == null){
+          proceed=0;
+          failedinserts.push({ "net_id": id, "group_id": group_id});
+          numfailed = numfailed+1;
+          var myjson = {
+              "conflictinserts": { "old": oldtuples, "new": newtuples }, "failedinserts": failedinserts,
+              "numtotal": 1, "numduplicate": numduplicate, "numsuccess": numsuccess, "numfailed": numfailed
+          }
+          return res.json(myjson); //return early b/c there is only one insert
+      }
+
+      //Check 1- Student exists?
+      var pool2 = pool.promise();
+      var queries=[]
+      var query = toUnnamed("SELECT * FROM mydb.Student s WHERE s.net_id = :net_id", {
+          net_id: net_id,
+      });
+      queries.push(pool2.query(query[0], query[1]));
+      var results = await Promise.all(queries);
+
+      results.forEach(([rows, fields]) => {
+          if (rows.length == 0) {
+              //oldtuples.push({ "group_id": rows[0].group_id, "n": rows[0].name, "sponsor": rows[0].sponsor })
+              //newtuples.push({ "group_id": parseInt(id), "name": name, "sponsor": parseInt(sponsor)})
+              console.log("That student doesn't exist!");
+              status = 400;
+              //proceed = 0;
+          }
+      });
+
+      if(status == 400){
+        return res.send("NONEXISTENT_STUDENT")
+      }
+
+      //Check 2- Group exists?
+      var queries=[]
+      var pool2 = pool.promise();
+      var query = toUnnamed("SELECT * FROM mydb.Groups g WHERE g.group_id = :group_id", {
+          group_id: group_id
+      });
+      queries.push(pool2.query(query[0], query[1]));
+      var results = await Promise.all(queries);
+
+      results.forEach(([rows, fields]) => {
+          if (rows.length == 0) {
+              console.log("That group doesn't exist.");
+              status = 400;
+              //numduplicate = numduplicate + 1 
+              //proceed = 0;
+          }
+      });
+      if(status == 400){
+        return res.send("NONEXISTENT_GROUP")
+      }
+
+      //Check 3- student, group pair already exists?
+      var queries=[]
+      var pool2 = pool.promise();
+      var query = toUnnamed("SELECT * FROM mydb.Group_Has_Student ghs WHERE ghs.group_id = :group_id AND ghs.net_id=:net_id", {
+          group_id: group_id,
+          net_id: net_id
+      });
+      queries.push(pool2.query(query[0], query[1]));
+      var results = await Promise.all(queries);
+
+      results.forEach(([rows, fields]) => {
+          if (rows.length == 1) {
+              console.log("That student group pair already exists.");
+              status = 400;
+              //numduplicate = numduplicate + 1 
+              //proceed = 0;
+          }
+      });
+      if(status == 400){
+        return res.send("SUCCESS") 
+      }
+
+      //if(proceed){
+      //Proceed to insert
+      var queries = []
+      var query = toUnnamed("INSERT into mydb.Group_Has_Student VALUES(:group_id, :net_id)", {
+          group_id: group_id,
+          net_id: net_id
+      });
+      queries.push(pool2.query(query[0], query[1]));
+      await Promise.all(queries).catch(() => { console.log("Some sql error in insertion"); status = 400; numfailed=numfailed+1;});
+      //}
+      numsuccess= 1-(oldtuples.length + failedinserts.length + numduplicate);
+      //there shouldn't be any conflict inserts in this route, but I'm keeping the json the same as the other insert routes
+      myjson = {
+          "conflictinserts": { "old": oldtuples, "new": newtuples }, "failedinserts": failedinserts,
+          "numtotal": 1, "numduplicate": numduplicate, "numsuccess": numsuccess, "numfailed": numfailed
+      }
+
+      if (status == 400) {
+          return res.json(myjson);
+      }
+      else {
+          return res.send("SUCCESS");
+      }
+  })();   
+});
+
 router.post("/insert", (req, res) => {
   var numduplicate = 0, numsuccess = 0, numfailed = 0;
 
