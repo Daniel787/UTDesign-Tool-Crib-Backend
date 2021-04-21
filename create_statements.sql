@@ -321,11 +321,12 @@ insert into mydb.student (net_id, name, email, utd_id, student_hold) values
 ('aaa155001', "Fake Name8", "15001@utdallas", 151, false);
 
 insert into mydb.groups (group_id, group_name, group_sponsor) VALUES
+(0, "Default Group", "All Students")
 (24, "epics group", "ntafos"),
 (357, "toolshed group", "robles"),
 (01, "electrical group", "bishop");
 
-insert into mydb.group_has_student (group_id, net_id) VALUES
+insert into mydb.group_has_student (group_id, net_id, display) VALUES
 (24,  'abc180002',1),
 (24,  'adf180004',1),
 (357, 'bcd180003',1),

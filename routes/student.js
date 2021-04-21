@@ -20,11 +20,10 @@ router.get("/", (req, res) => {
 });
 
 router.get("/withgroups", (req, res) => {
-
   myquery =
-    "SELECT  ghs.net_id, s.name, s.email, s.utd_id, s.student_hold, ghs.group_id, g.group_name, g.group_sponsor "
+    "SELECT  ghs.net_id, ghs.display, s.name, s.email, s.utd_id, s.student_hold, ghs.group_id, g.group_name, g.group_sponsor "
     + "FROM mydb.group_has_student ghs, mydb.student s, mydb.groups g "
-    + "WHERE ghs.net_id = s.net_id AND ghs.group_id = g.group_id "
+    + "WHERE ghs.net_id = s.net_id AND ghs.group_id = g.group_id"
     + "ORDER BY ghs.net_id, ghs.group_id;"
 
   if (req.query.json == "true") {
@@ -220,7 +219,8 @@ router.post("/insert", (req, res) => {
       if(proceed){
           var queries = []
           console.log("", id, name, email)
-          var query = toUnnamed("INSERT into mydb.Student VALUES(:id, :name, :email, 0, 0)", {
+          var query = toUnnamed("INSERT into mydb.Student VALUES(:id, :name, :email, 0, 0);"
+                              +  "INSERT into mydb.Group_Has_Student VALUES (0, :id, 0)", {
             id: id,
             name: name,
             email: email
