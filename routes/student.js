@@ -7,13 +7,7 @@ var toUnnamed = require('named-placeholders')();
 var pool = require('../db.js')
 
 function validate(id, name, email) {
-  //check if valid id
-  var regex=/[0-9]/; //only 1-9
-  var letters=/[a-zA-Z]/
-  if(! regex.test(id) || letters.test(id)){
-      console.log("A")
-      return -1;
-  }
+  //all are strings, so no checks implemented for now
   return 1;
 }
 
@@ -181,7 +175,7 @@ router.post("/insert", (req, res) => {
 
       var pool2 = pool.promise();
       var queries=[]
-      console.log("A")
+      
       //we want to examine matching group id, but difference something else
       var query = toUnnamed("SELECT * FROM mydb.Student s WHERE s.net_id = :id AND (name <> :name OR"
           + " email <> :email)", {
@@ -191,9 +185,10 @@ router.post("/insert", (req, res) => {
       });
       queries.push(pool2.query(query[0], query[1]));
       var results = await Promise.all(queries);
-      console.log("B")
+      
       results.forEach(([rows, fields]) => {
           if (rows.length == 1) {
+              console.log("C")
               oldtuples.push({ "id": rows[0].group_id, "name": rows[0].name, "email": rows[0].email })
               newtuples.push({ "group_id": parseInt(id), "name": name, "email": email})
               console.log("That group exists, but you have supplied different values for one of the attributes");
@@ -201,11 +196,10 @@ router.post("/insert", (req, res) => {
               proceed = 0;
           }
       });
-
+      
       var queries=[]
       var pool2 = pool.promise();
       //matching everything
-      console.log("", id, name, email)
       var query = toUnnamed("SELECT * FROM mydb.Student s WHERE s.net_id = :id AND s.name = :name AND s.email = :email", {
         id: id,
         name: name,
@@ -216,7 +210,7 @@ router.post("/insert", (req, res) => {
 
       results.forEach(([rows, fields]) => {
           if (rows.length == 1) {
-              console.log("That group exists, and is entirely identical to one in the database. Will not be inserted.");
+              console.log("That student exists, and is entirely identical to one in the database. Will not be inserted.");
               status = 400;
               numduplicate = numduplicate + 1 
               proceed = 0;
@@ -225,13 +219,14 @@ router.post("/insert", (req, res) => {
 
       if(proceed){
           var queries = []
-          var query = toUnnamed("INSERT into mydb.Student VALUES(:group_id, :name, :email, 0, 0)", {
+          console.log("", id, name, email)
+          var query = toUnnamed("INSERT into mydb.Student VALUES(:id, :name, :email, 0, 0)", {
             id: id,
             name: name,
             email: email
           });
           queries.push(pool2.query(query[0], query[1]));
-          await Promise.all(queries).catch(() => { failedinserts.push({ "group_id": parseInt(id), "name": name, "email": email});
+          await Promise.all(queries).catch(() => { failedinserts.push({ "net_id": id, "name": name, "email": email});
           console.log("Some sql error in insertion"); status = 400; numfailed=numfailed+1;});
       }
       numsuccess= 1-(oldtuples.length + failedinserts.length + numduplicate);
@@ -504,7 +499,7 @@ router.post("/upload", (req, res) => {
             queries = []
             pool2 = pool.promise();
             var query = toUnnamed("INSERT into mydb.Student VALUES(:net_id, :name, :email, :utd_id, :student_hold);"
-              + "INSERT INTO mydb.Group_Has_Student VALUES(:group_id, :net_id)"
+              + "INSERT INTO mydb.Group_Has_Student VALUES(:group_id, :net_id, 1)"
               , {
                 net_id: net_id,
                 name: name,
@@ -524,7 +519,7 @@ router.post("/upload", (req, res) => {
             console.log("Clear to insert student/group relationship: " + net_id + name + email)
             queries = []
             pool2 = pool.promise();
-            var query = toUnnamed("INSERT INTO mydb.Group_Has_Student VALUES(:group_id, :net_id)"
+            var query = toUnnamed("INSERT INTO mydb.Group_Has_Student VALUES(:group_id, :net_id, 1)"
               , {
                 net_id: net_id,
                 group_id: group_id

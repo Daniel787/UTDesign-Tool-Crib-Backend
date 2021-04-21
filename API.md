@@ -676,7 +676,22 @@ Failure Response : Status `400` Bad Request and errcode in response:
 
 Request: JSON:
 ```
-
+{
+    "groups": [
+        {
+            "group_id": {INT},
+            "group_name": {STRING},
+            "group_sponsor": {STRING},
+            "students": [
+                {
+                    "net_id": {STRING},
+                    "name": {STRING},
+                    "email": {STRING}
+                }
+            ]
+        }
+    ]
+}
 ```
 Success Response : Status `200`
 

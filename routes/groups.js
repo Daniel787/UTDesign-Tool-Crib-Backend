@@ -380,8 +380,8 @@ router.post("/insert", (req, res) => {
 
       results.forEach(([rows, fields]) => {
           if (rows.length == 1) {
-              oldtuples.push({ "group_id": rows[0].group_id, "name": rows[0].name, "sponsor": rows[0].sponsor })
-              newtuples.push({ "group_id": parseInt(id), "name": name, "sponsor": parseInt(sponsor)})
+              oldtuples.push({ "group_id": rows[0].group_id, "name": rows[0].group_name, "sponsor": rows[0].group_sponsor })
+              newtuples.push({ "group_id": parseInt(id), "name": name, "sponsor": sponsor})
               console.log("That group exists, but you have supplied different values for one of the attributes");
               status = 400;
               proceed = 0;
