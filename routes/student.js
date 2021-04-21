@@ -241,7 +241,7 @@ router.post("/insert", (req, res) => {
           return res.json(myjson);
       }
       else {
-          return res.send("SUCCESS");
+          return res.json({"message":"SUCCESS"});
       }
   })(); 
   
@@ -552,7 +552,7 @@ router.post("/upload", (req, res) => {
       return res.status(status).json(myjson2);
     }
     else {
-      return res.send("SUCCESS")
+      return res.json({"message":"SUCCESS"});
     }
   })();
 });
