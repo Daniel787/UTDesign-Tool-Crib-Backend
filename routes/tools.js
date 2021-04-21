@@ -296,7 +296,7 @@ router.post("/insert", (req, res) => {
             return res.json(myjson);
         }
         else {
-            return res.send("SUCCESS");
+          return res.json({"message":"SUCCESS"});
         }
     })();   
 });
@@ -394,13 +394,13 @@ router.post("/upload", (req, res) => {
       "numtotal": numrows, "numduplicate": numduplicate, "numsuccess": numsuccess, "numfailed": numfailed}
 
       if(numduplicate == numrows){
-        return res.send("SUCCESS");
+        return res.json({"message":"SUCCESS"});
       }
       else if (status == 400) {
           return res.json(myjson);
       }
       else {
-          return res.send("SUCCESS");
+        return res.json({"message":"SUCCESS"});
       }
 
 
@@ -549,7 +549,7 @@ router.post("/rent", (req, res) => {
       emailsdates.push([email, datedue, id, tool_name])
     }
     console.log("EMAILSDATES: " + emailsdates)
-    res.send("finished");
+    return res.json({"message":"SUCCESS"});
 
   })(); //end async
 });
@@ -645,7 +645,7 @@ router.post("/return", (req, res) => {
       results = await Promise.all(queries);
     }
     
-    res.send("finished");
+    return res.json({"message":"SUCCESS"});
 
   })();
 });
