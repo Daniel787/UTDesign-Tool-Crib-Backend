@@ -157,6 +157,7 @@ router.post("/insert", (req, res) => {
       var id= req.body.net_id;
       var name= req.body.name;
       var email= req.body.email;
+      var utd_id= req.body.utd_id;
 
       var proceed=1;
       //easy checks that don't require queries
@@ -180,7 +181,7 @@ router.post("/insert", (req, res) => {
           + " email <> :email)", {
           id: id,
           name: name,
-          email: email
+          email: email,
       });
       queries.push(pool2.query(query[0], query[1]));
       var results = await Promise.all(queries);
@@ -219,11 +220,12 @@ router.post("/insert", (req, res) => {
       if(proceed){
           var queries = []
           console.log("", id, name, email)
-          var query = toUnnamed("INSERT into mydb.Student VALUES(:id, :name, :email, 0, 0);"
+          var query = toUnnamed("INSERT into mydb.Student VALUES(:id, :name, :email, :utd_id, 0);"
                               +  "INSERT into mydb.Group_Has_Student VALUES (0, :id, 0)", {
             id: id,
             name: name,
-            email: email
+            email: email,
+            utd_id: utd_id
           });
           queries.push(pool2.query(query[0], query[1]));
           await Promise.all(queries).catch(() => { failedinserts.push({ "net_id": id, "name": name, "email": email});
