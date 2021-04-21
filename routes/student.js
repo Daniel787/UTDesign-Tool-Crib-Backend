@@ -140,16 +140,17 @@ router.get("/holds/detailed", (req, res) => {
 
 router.get("/holds/withtools/json", (req, res) => {
 
-  myquery =
+  myquery = 
    "SELECT JSON_OBJECT('net_id', s.net_id, 'name', s.name, 'email', s.email, 'utd_id', s.utd_id, 'hold', s.student_hold, 'tools',  "
-  +"JSON_ARRAYAGG(JSON_OBJECT('group_id', t.group_id, 'tool_id', tool.tool_id, 'tool name', tool.name, 'start_date', t.date, 'hours_rented', rt.hours_rented))) student "
+  +"JSON_ARRAYAGG(JSON_OBJECT('group_id', t.group_id, 'tool_id', tool.tool_id, 'tool_name', tool.name, 'start_date', t.date, 'hours_rented', rt.hours_rented, 'due_date',  "
+  +"(cast(from_unixtime(rt.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) ))) student "
   +"FROM mydb.transaction t, mydb.rented_tool rt, mydb.rental_tool tool, mydb.student s "
   +"WHERE t.transaction_id = rt.transaction_id "
   +"AND t.net_id = s.net_id "
   +"AND rt.tool_id = tool.tool_id "
   +"AND rt.returned_date is null "
   +"GROUP BY s.net_id;"
-  
+
   pool.query(myquery, function (err, rows, fields) {
     if (err) console.log(err)
     res.json(rows);
