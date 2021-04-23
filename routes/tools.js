@@ -201,9 +201,9 @@ function sendmails() {
   }
 }
 
-//This checker runs once every minute for testing. Later change the cron to be once every 5 minutes
-var job = new CronJob('* * * * *', sendmails);
-job.start();
+//I've commented this out for now. Good luck future groups...
+//var job = new CronJob('* * * * *', sendmails);
+//job.start();
 
 //emails end
 
@@ -430,27 +430,36 @@ router.post("/rent", (req, res) => {
 
     //when superrent is 1, the following check does not occur
     if(! superrent){
-      //CHECK: does the student have a hold?
+      //CHECK: does the group have a hold
       var query = toUnnamed(
-        "SELECT * FROM mydb.student WHERE student_hold = true AND net_id= :student_id", {
-        student_id: req.body.customer.net_id
+        //"SELECT * FROM mydb.student WHERE student_hold = true AND net_id= :student_id", {
+          "select * "
+          + "from mydb.transaction, mydb.rented_tool, mydb.rental_tool, mydb.student"
+          +  " where mydb.transaction.transaction_id= mydb.rented_tool.transaction_id"
+          + " and mydb.transaction.net_id = mydb.student.net_id"
+          + " and mydb.rented_tool.tool_id = mydb.rental_tool.tool_id "
+          +  "and mydb.rented_tool.returned_date is null and mydb.rental_tool.tool_id > 0 and mydb.transaction.group_id = :group_id;" ,{
+        group_id: req.body.customer.group_id
       });
       
       queries.push(pool2.query(query[0], query[1]));
 
       //console.log("NUMQUERIES: " + queries.length);
       var results = await Promise.all(queries);
-      var valid = []
       var status = 200
 
-      results.forEach(([rows, fields]) => { if (rows.length == 1) { console.log("That student has a hold"); console.log(rows.length); status = 400; } });
-      results.forEach(([rows, fields]) => { valid.push(rows[0]); console.log(rows[0]); });
+      results.forEach(([rows, fields]) => { 
+        console.log(rows.length)
+        if (rows.length != 0) { 
+          console.log("Someone in the group has a hold"); status = 400; 
+        } 
+      });
 
       if (status != 200) {
-        return res.status(400).send('STUDENT_HOLD');
+        return res.status(400).send('GROUP_HOLD');
       }
-
-      console.log("The student does not have a hold")
+    
+      console.log("The group does not have a hold")
       queries = []
       //console.log("length"+ req.body.cart.length);
     }
@@ -525,11 +534,6 @@ router.post("/rent", (req, res) => {
 
     valid = []
     status = 200;
-
-    results.forEach(([rows, fields]) => { if (rows.length == 0) { console.log("We couldn't retrieve a mail"); status = 400; } });
-    if (status != 200) {
-      return res.status(400).send('NO_EMAIL');
-    }
 
     for (i = 0; i < req.body.cart.length; i++) {
       var tool_name = req.body.cart[i].item.name
