@@ -505,10 +505,9 @@ router.post("/rent", (req, res) => {
     //console.log("NUMQUERIES: " + queries.length);
     var results = await Promise.all(queries).catch(() => { console.log("Rental placement failed."); status = 400; });
     valid = []
-    status = 200;
+   
 
     //results.forEach(([rows, fields]) => { if (rows.length != 0){ console.log("Some issue placing the rental");status = 400; }});
-    results.forEach(([rows, fields]) => { valid.push(rows[0]); console.log(rows); });
     //console.log("VALID: "+ valid)
 
     if (status != 200) {
