@@ -38,7 +38,7 @@ router.get("/withmembers", (req, res) => {
     console.log("A")
     myquery =
       "SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));"
-      "SELECT JSON_OBJECT('group_id', ghs.group_id, 'group_name', g.group_name, 'group_sponsor', g.group_sponsor, 'students', JSON_ARRAYAGG(JSON_OBJECT('net_id', ghs.net_id, 'name', s.name, 'email', s.email, 'utd_id', s.utd_id, 'hold', s.student_hold))) `group` "
+      + "SELECT JSON_OBJECT('group_id', ghs.group_id, 'group_name', g.group_name, 'group_sponsor', g.group_sponsor, 'students', JSON_ARRAYAGG(JSON_OBJECT('net_id', ghs.net_id, 'name', s.name, 'email', s.email, 'utd_id', s.utd_id, 'hold', s.student_hold))) `group` "
       + "FROM mydb.group_has_student ghs, mydb.student s, mydb.groups g "
       + "WHERE ghs.net_id = s.net_id AND ghs.group_id = g.group_id "
       + "GROUP BY ghs.group_id "
