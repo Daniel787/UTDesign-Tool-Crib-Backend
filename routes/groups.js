@@ -46,7 +46,7 @@ router.get("/withmembers", (req, res) => {
   }
   pool.query(myquery, function (err, rows, fields) {
     if (err) console.log(err)
-    res.json(rows);
+    res.json(rows[1]);
   })
 });
 
