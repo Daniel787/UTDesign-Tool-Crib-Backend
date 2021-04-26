@@ -220,7 +220,7 @@ SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 
-CREATE VIEW mydb.tool_status AS
+CREATE OR REPLACE VIEW mydb.tool_status AS
 SELECT * FROM mydb.rental_tool
 natural join
 (SELECT rtr.tool_id, "Rented" status, t.group_id group_id, t.net_id net_id, rtr.hours_rented hours_rented, t.date checkout_date, 
@@ -258,10 +258,11 @@ WHERE rtd.tool_id
 	AND rtd.tool_id < 0
 ) u;
 
-CREATE VIEW mydb.group_details AS SELECT s.*, u.tool_id, u.status, u.checkout_date, u.due_date FROM 
-(SELECT ghs.group_id, ghs.net_id, s.name, s.email, s.utd_id, s.student_hold 
-FROM mydb.group_has_student ghs, mydb.student s
+CREATE OR REPLACE VIEW mydb.group_details AS SELECT s.*, u.tool_id, u.status, u.checkout_date, u.due_date FROM 
+(SELECT ghs.group_id, g.group_name, g.group_sponsor, ghs.net_id, ghs.display, s.name, s.email, s.utd_id, s.student_hold 
+FROM mydb.group_has_student ghs, mydb.student s, mydb.groups g
 WHERE ghs.net_id = s.net_id
+	AND ghs.group_id = g.group_id
 ORDER BY ghs.group_id, ghs.net_id) s
 LEFT JOIN
 (SELECT * FROM tool_status)u
