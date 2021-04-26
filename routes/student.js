@@ -314,6 +314,8 @@ router.post("/modify", (req, res) => {
 });
 
 router.post("/upload", (req, res) => {
+  console.log(req.body)
+
   var failedinserts = []
   var conflictinserts = []
   var newtuples = []
@@ -383,7 +385,7 @@ router.post("/upload", (req, res) => {
           console.log("That group exists, but you have supplied different values for one of the attributes");
           console.log("oldgroups" + oldgroups)
           console.log("newtuple" + newgroups)
-          status = 400;
+          //status = 400;
           newGroup = 0;
           conflictgroups.push([oldgroups, newgroups]) //again, not really necessary
         }
@@ -400,8 +402,8 @@ router.post("/upload", (req, res) => {
         });
         queries.push(pool2.query(query[0], query[1]));
         var results2 = await Promise.all(queries).catch(() => {
-          console.log("FAILED TO INSERTED GROUP");
-          status = 412;
+          console.log("FAILED TO INSERT GROUP");
+          status = 400;
           failedgroups.push({ "group_id": group_id, "group_name": group_name, "group_sponsor": group_sponsor })
         });
       }
@@ -429,7 +431,7 @@ router.post("/upload", (req, res) => {
         console.log("NAME: " + name + "    NET_ID:  " + net_id + "   " + "    EMAIL: " + email)
         //Start performing student checks
         //net_id, name, email, utd_id, student_hold
-        if ((name == null || email == null || net_id == null)) {
+        if (name == null || email == null || net_id == null || name== "" || email== "" || net_id == "") {
           console.log("student " + j % 3 + " has a null field, skipping...")
           if (!((name == null && email == null && net_id == null))) { //don't want to push all null students to failedinserts 
             failedinserts.push({ "net_id": net_id, "name": name, "email": email, "utd_id": -1, "student_hold": 0 });

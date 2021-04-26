@@ -720,7 +720,7 @@ Failure Response : Status `400` Bad Request and errcode in response:
 * 'NONEXISTENT\_PAIR' when missing group\_id, net\_id pair
 * 'SQL_ERROR' when some unknown SQL error occurs
 
-<a name="upload-gs-sheet""></a>
+<a name="upload-gs-sheet"></a>
 ### Upload a sheet of Students and Groups
 `POST`, /students/upload
 
