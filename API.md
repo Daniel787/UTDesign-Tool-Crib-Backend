@@ -26,10 +26,10 @@ Success Response : Status `200` and JSON:
 ```
 [
     {
-        "part_id": {},
+        "part_id": {INT},
         "name": {STRING},
-        "quantity_available": {},
-        "current_cost": {}
+        "quantity_available": {INT},
+        "current_cost": {DECIMAL}
     },...
 ]
 ```
@@ -62,8 +62,8 @@ Failure Response : Status `400` Bad Request and errcode in response:
 Request: JSON:
 ```
 [
-{"part_id": {},"name":{STRING},"current_cost":{},"quantity_available":{INT}},
-{"part_id": {},"name":{STRING},"current_cost":{},"quantity_available":{INT}},
+{"part_id": {INT},"name":{STRING},"current_cost":{DECIMAL},"quantity_available":{INT}},
+{"part_id": {INT},"name":{STRING},"current_cost":{DECIMAL},"quantity_available":{INT}},
 ]
 ```
 Success Response : Status `200`
@@ -74,27 +74,27 @@ Failure Response : Status `400` Bad Request and JSON in response:
     "conflictinserts": {
         "old": [
             {
-                "part_id": {},
+                "part_id": {INT},
                 "name": {STRING},
-                "quantity_available": {},
-                "current_cost:": {}
+                "quantity_available": {INT},
+                "current_cost:": {DECIMAL}
             }
         ],
         "new": [
             {
-                "part_id": {},
+                "part_id": {INT},
                 "name": {STRING},
-                "quantity_available": {},
-                "current_cost:": {}
+                "quantity_available": {INT},
+                "current_cost:": {DECIMAL}
             }
         ]
     },
     "failedinserts": [
         {
-            "part_id": {},
+            "part_id": {INT},
             "name": {STRING},
-            "quantity_available": {},
-            "current_cost:": {}
+            "quantity_available": {INT},
+            "current_cost:": {DECIMAL}
         }
     ],
     "numtotal": {INT},
@@ -148,10 +148,10 @@ or Status `500` Internal Server Error and errcode in response
 Request: JSON:
 ```
 {
-  "part_id": 12345,
-  "name": "Changed",
-  "new_cost":7,
-  "new_quantity":89
+  "part_id": {INT},
+  "name": {STRING},
+  "new_cost": {DECIMAL},
+  "new_quantity": {INT}
 }
 ```
 Success Response : Status `200`
@@ -230,8 +230,8 @@ Failure Response : Status `400` Bad Request and errcode in response:
 Request: JSON:
 ```
 [
-{"part_id": {},"name":{STRING}},
-{"part_id": {},"name":{STRING},"current_cost":{},"quantity_available":{INT}},
+{"tool_id": {INT},"name":{STRING}},
+{"tool_id": {INT},"name":{STRING}}
 ]
 ```
 Success Response : Status `200`
@@ -242,20 +242,20 @@ Failure Response : Status `400` Bad Request and JSON in response:
     "conflictinserts": {
         "old": [
             {
-                "part_id": {},
+                "tool_id": {INT},
                 "name": {STRING},
             }
         ],
         "new": [
             {
-                "part_id": {},
+                "tool_id": {INT},
                 "name": {STRING},
             }
         ]
     },
     "failedinserts": [
         {
-            "part_id": {},
+            "tool_id": {INT},
             "name": {STRING},
         }
     ],
@@ -304,7 +304,7 @@ or Status `500` Internal Server Error and errcode in response
 Request: JSON:
 ```
 {
-  "tool_id": {},
+  "tool_id": {INT},
   "name": {STRING}"
 }
 ```
@@ -707,7 +707,7 @@ Failure Response : Status `400` Bad Request and JSON in response:
     ],
     "failedgroups": [
         {
-             "group_id" : {INT},
+            "group_id" : {INT},
             "group_name" :{STRING},
             "group_sponsor": {STRING}
         }
@@ -715,27 +715,24 @@ Failure Response : Status `400` Bad Request and JSON in response:
     "conflictinserts": {
         "old": [
             {
-                "part_id": {},
+               "net_id": {STRING},
                 "name": {STRING},
-                "quantity_available": {},
-                "current_cost:": {}
+                "email": {STRING}
             }
         ],
         "new": [
             {
-                "part_id": {},
+               "net_id": {STRING},
                 "name": {STRING},
-                "quantity_available": {},
-                "current_cost:": {}
+                "email": {STRING}
             }
         ]
     },
     "failedinserts": [
         {
-            "part_id": {},
+            "net_id": {STRING},
             "name": {STRING},
-            "quantity_available": {},
-            "current_cost:": {}
+            "email": {STRING}
         }
     ],
     "numtotal": {INT},
