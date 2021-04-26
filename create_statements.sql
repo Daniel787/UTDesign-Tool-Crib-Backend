@@ -267,14 +267,14 @@ u.net_id = s.net_id AND u.group_id = s.group_id;
 CREATE VIEW mydb.tool_status AS
 SELECT * FROM mydb.rental_tool
 natural join
-(SELECT rtr.tool_id, "Rented" status, t.group_id group_id, t.net_id net_id, t.date checkout_date, 
+(SELECT rtr.tool_id, "Rented" status, t.group_id group_id, t.net_id net_id, rtr.hours_rented, t.date checkout_date, 
 (cast(from_unixtime(rtr.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date 
 FROM mydb.transaction t , mydb.rented_tool rtr
 WHERE (t.transaction_id = rtr.transaction_id)
 	AND (rtr.returned_date IS NULL)
 	AND NOW() <= (cast(from_unixtime(rtr.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3)))
 UNION
-SELECT rto.tool_id, "Overdue" status, t.group_id group_id, t.net_id net_id, t.date checkout_date, 
+SELECT rto.tool_id, "Overdue" status, t.group_id group_id, t.net_id net_id, rto.hours_rented, t.date checkout_date, 
 (cast(from_unixtime(rto.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date 
 FROM mydb.transaction t , mydb.rented_tool rto
 WHERE (t.transaction_id = rto.transaction_id)
