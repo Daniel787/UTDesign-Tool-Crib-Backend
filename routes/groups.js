@@ -59,7 +59,7 @@ router.get("/withmembers2", (req, res) => {
 
   if (req.query.json) { //removed == "true"
     myquery =
-  "SELECT JSON_OBJECT('group_id', ghs.group_id, 'group_name', g.group_name, 'group_sponsor', g.group_sponsor, 'students', "
+  "SELECT JSON_OBJECT('group_id', g.group_id, 'group_name', g.group_name, 'group_sponsor', g.group_sponsor, 'students', "
   +"JSON_ARRAYAGG(JSON_OBJECT('net_id', ghs.net_id, 'name', s.name, 'email', s.email, 'utd_id', s.utd_id, 'hold', s.student_hold, 'display', ghs.display))) `group`  "
   +"FROM mydb.group_has_student ghs, mydb.student s, mydb.groups g  "
   +"WHERE ghs.net_id = s.net_id AND g.group_id > 0 AND (ghs.group_id = g.group_id OR g.group_id NOT IN (SELECT ghs2.group_id FROM mydb.group_has_student ghs2)) "
