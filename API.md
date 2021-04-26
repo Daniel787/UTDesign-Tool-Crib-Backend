@@ -2,11 +2,37 @@
 
 # Table of Contents
 1. [Parts](#parts)
+    * [View all parts](#view-all-parts)
+    * [Search parts](#search-parts)
+    * [Insert part](#insert-part)
+    * [Upload sheet of parts](#upload-parts-sheet)
+    * [Buy a cart of parts](#buy-parts)
+    * [Modify a single part](#modify-part)
 2. [Tools](#tools)
+    * [View all tools](#view-all-tools)
+    * [Search tools](#search-tools)
+    * [Insert tool](#insert-tool)
+    * [Upload a sheet of tools](#upload-tools-sheet)
+    * [Rent a cart of tools](#rent-tools)
+    * [Modify a single tool](#modify-tool)
+3. [Expense](#expense)
+    * [Generate a simple report](#simple)
+    * [Generate a medium report](#medium)
+    * [Generate a full report](#full)
 3. [Groups and Students](#studentsgroups)
+    * [View all students and their groups](#view-all-sg)
+    * [Search students](#search-students)
+    * [View all groups and their students](#view-all-gs)
+    * [Search groups](#search-groups)
+    * [Insert a single group](#insert-group)
+    * [Insert a single student](#insert-student)
+    * [Add a student to a group](#add-to-group)
+    * [Delete a student to a group](#drop-from-group)
+    * [Upload a sheet of students and groups](#upload-gs-sheet)
 
 <a name="parts"></a>
 ## Parts (Available for purchase)
+<a name="view-all-parts"></a>
 ### View all inventory parts
 `GET`, /inventory/parts
 
@@ -24,6 +50,7 @@ Success Response : Status `200` and JSON:
 ]
 ```
 
+<a name="search-parts"></a>
 ### Search part by id or name
 `GET`, /inventory/parts/search
 
@@ -44,6 +71,7 @@ Note that the JSON is always an array, whether zero, one, or many tools match th
 Failure Response : Status `400` Bad Request and errcode in response:
 * 'MISSING\_PARAMS' if no correct parameter is given
 
+<a name="insert-part"></a>
 ### Insert one part
 `POST`, /inventory/parts/insert
 
@@ -63,6 +91,7 @@ Failure Response : Status `400` Bad Request and errcode in response:
 * 'NEGATIVE_QUANTITY'
 * 'NEGATIVE_COST'
 
+<a name="upload-parts-sheet"></a>
 ### Upload a sheet of parts
 `POST`, /inventory/parts/upload
 
@@ -110,7 +139,7 @@ Failure Response : Status `400` Bad Request and JSON in response:
     "numfailed": {INT}
 }
 ```
-
+<a name="buy-parts"></a>
 ### Buy a cart of parts
 `POST`, /inventory/parts/buy
 
@@ -149,6 +178,7 @@ Failure Response : Status `400` Bad Request and JSON in response:
 ```
 or Status `500` Internal Server Error and errcode in response
 
+<a name="modify-part"></a>
 ### Change a single item
 `POST`, /inventory/parts/modify/
 
@@ -170,6 +200,8 @@ or Status `500` Internal Server Error and errcode in response
 
 <a name="tools"></a>
 ## Tools (Available for rent)
+
+<a name="view-all-tools"></a>
 ### View all tools with status
 `GET`, /inventory/tools
 Request: no parameters
@@ -188,7 +220,7 @@ Success Response : Status `200` and JSON:
 ]
 ```
 For status == "Available", all columns afterwards have null value.
-
+<a name="search-tools"></a>
 ### Search tool by id or name
 `GET`, /inventory/tools/search
 
@@ -215,6 +247,7 @@ Note that the JSON is always an array, whether zero, one or many tools match the
 Failure Response : Status `400` Bad Request and errcode in response:
 * 'MISSING\_PARAMS' if no correct parameter is given
 
+<a name="insert-tool"></a>
 ### Insert one tool
 `POST`, /inventory/tools/insert
 
@@ -230,6 +263,7 @@ Success Response : Status `200`
 Failure Response : Status `400` Bad Request and errcode in response:
 * 'ER\_DUP\_ENTRY' when tool_id is not unique
 
+<a name="upload-tools-sheet"></a>
 ### Upload a sheet of tools
 `POST`, /inventory/tools/upload
 
@@ -272,6 +306,7 @@ Failure Response : Status `400` Bad Request and JSON in response:
 }
 ```
 
+<a name="rent-tools"></a>
 ### Rent a cart of tools
 `POST`, /inventory/tools/rent/
 
@@ -304,6 +339,7 @@ Failure Response : Status `400` Bad Request and errcode in response:
 
 or Status `500` Internal Server Error and errcode in response
 
+<a name="modify-tool"></a>
 ### Change a single item
 `POST`, /inventory/tools/modify/
 
@@ -321,8 +357,9 @@ Failure Response : Status `400` Bad Request and errcode in response:
 
 or Status `500` Internal Server Error and errcode in response
 
-
+<a name="expense"></a>
 ## Expense
+<a name="simple"></a>
 ### Get simple expense report
 `GET`, /expense/simple
 
@@ -348,6 +385,7 @@ CSV file with name "YYYYMMDD-YYYYMMDD_simple_report.csv"
 Failure Response : Status `400` Bad Request and errcode in response:
 * 'MISSING_PARAMS' when start or end date missing
 
+<a name="medium"></a>
 ### Get medium detail expense report
 `GET`, /expense/medium
 
@@ -375,6 +413,7 @@ CSV file with name "YYYYMMDD-YYYYMMDD_medium_report.csv"
 Failure Response : Status `400` Bad Request and errcode in response:
 * 'MISSING_PARAMS' when start or end date missing
 
+<a name="full"></a>
 ### Get full detail expense report
 `GET`, /expense/full
 
@@ -410,7 +449,7 @@ Failure Response : Status `400` Bad Request and errcode in response:
 
 <a name="studentsgroups"></a>
 ## Students and Groups
-
+<a name="view-all-sg"></a>
 ### Get a list of students and what group(s) they are in
 `GET`, /student/withgroups
 
@@ -443,7 +482,7 @@ Success Response ?json="true": Status `200` and JSON:
 OR
 CSV version without ?json="true"
 
-
+<a name="search-students"></a>
 ### Get a list of students matching search criteria and what group(s) they are in
 `GET`, /student/withgroups/search
 
@@ -481,7 +520,7 @@ CSV version without ?json="true"
 Failure Response : Status `400` Bad Request and errcode in response:
 * 'MISSING\_PARAMS' when missing net\_id or name  
 
-
+<a name="view-all-gs"></a>
 ### Get a list of groups and what student(s)/member(s) they have
 `GET`, /groups/withmembers
 
@@ -514,7 +553,7 @@ Success Response ?json="true": Status `200` and JSON:
 OR
 CSV version without ?json="true"
 
-
+<a name="search-groups"></a>
 ### Get a list of groups matching search criteria and what student(s)/member(s) they have
 `GET`, /groups/withmembers/search
 
@@ -550,6 +589,7 @@ CSV version without ?json="true"
 Failure Response : Status `400` Bad Request and errcode in response:
 * 'MISSING\_PARAMS' when missing group\_id or name 
 
+<a name="insert-group"></a>
 ### Insert a single group
 `POST`, /groups/insert
 
@@ -596,6 +636,7 @@ Failure Response : Status `400` Bad Request and JSON in response:
 }
 ```
 
+<a name="insert-student"></a>
 ### Insert a single student
 `POST`, /student/insert
 
@@ -642,6 +683,7 @@ Failure Response : Status `400` Bad Request and JSON in response:
 }
 ```
 
+<a name="add-to-group"></a>
 ### Add a student to a group
 `POST`, /groups/insertMember
 
@@ -659,6 +701,7 @@ Failure Response : Status `400` Bad Request and errcode in response:
 * 'NONEXISTENT\_GROUP' when missing group\_id
 * 'SQL_ERROR' when some unknown SQL error occurs
 
+<a name="drop-from-group"></a>
 ### Delete a student from a group
 `POST`, /groups/deleteMember
 
@@ -677,7 +720,7 @@ Failure Response : Status `400` Bad Request and errcode in response:
 * 'NONEXISTENT\_PAIR' when missing group\_id, net\_id pair
 * 'SQL_ERROR' when some unknown SQL error occurs
 
-
+<a name="upload-gs-sheet""></a>
 ### Upload a sheet of Students and Groups
 `POST`, /students/upload
 
