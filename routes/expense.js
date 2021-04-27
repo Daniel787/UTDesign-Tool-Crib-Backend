@@ -181,4 +181,46 @@ router.get("/full", (req, res) => {
   })
 });
 
+
+
+
+router.get("/toolstats", (req, res) => {
+
+  var query =
+    "SELECT tool_id, i.name, number_of_rentals, number_of_unique_renting_groups, assigned_hours, actual_hours_without_overdue, actual_hours_with_overdue_time - actual_hours_without_overdue overdue_hours, actual_hours_with_overdue_time total_actual_hours FROM( "
+    +"SELECT rt.tool_id, tool.name, COUNT(t.transaction_id) number_of_rentals, COUNT(DISTINCT t.group_id) number_of_unique_renting_groups,  "
+    +"  SUM(rt.hours_rented)  "
+    +"    assigned_hours,  "
+    +"  SUM(IF(rt.returned_date is not null, IF(TIMESTAMPDIFF(minute, t.date, rt.returned_date)/60 < rt.hours_rented, TIMESTAMPDIFF(minute, t.date, rt.returned_date)/60, rt.hours_rented), "
+    +"    IF(TIMESTAMPDIFF(minute, t.date, NOW())/60 < rt.hours_rented, TIMESTAMPDIFF(minute, t.date, NOW())/60, rt.hours_rented))) "
+    +"    actual_hours_without_overdue, "
+    +"  SUM(IF(rt.returned_date is not null, TIMESTAMPDIFF(minute, t.date, rt.returned_date)/60, TIMESTAMPDIFF(minute, t.date, NOW())/60)) "
+    +"    actual_hours_with_overdue_time "
+    +"FROM mydb.transaction t, mydb.rented_tool rt, mydb.rental_tool tool "
+    +"WHERE t.transaction_id = rt.transaction_id  "
+    +"AND rt.tool_id = tool.tool_id  "
+    +"GROUP BY tool.tool_id) i;"
+
+  pool.query(query, function (err, rows, fields) {
+    if (err) console.log(err)
+
+    if (req.query.csv == "true") {
+      //csv file name
+      res.attachment("tool_stats.csv");
+      //prepend headers
+      var headers = {};
+      for (key in rows[0]) {
+        headers[key] = key;
+      }
+      rows.unshift(headers);
+      //csv response
+      res.csv(rows);
+    }
+    else {
+      //json response
+      res.json(rows);
+    }
+  })
+});
+
 module.exports = router;
