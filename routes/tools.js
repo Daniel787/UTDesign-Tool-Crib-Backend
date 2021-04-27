@@ -160,8 +160,6 @@ var transporter = nodemailer.createTransport({
   }
 });
 
-
-//emails, dates, id, tool_name
 function sendmails() {
   console.log("sendmails(): emailsdates.length: " + emailsdates.length)
   for (var i = 0; i < emailsdates.length; i++) {
@@ -201,9 +199,35 @@ function sendmails() {
   }
 }
 
-//I've commented this out for now. Good luck future groups...
-//var job = new CronJob('* * * * *', sendmails);
-//job.start();
+//structure of emailsdates: emails, date, netid, tool_name
+function updateholds(){
+  console.log("updateholds(): emailsdates.length: " + emailsdates.length);
+
+  (async function sendquery(param) {//b/c multiple updates
+    for (var i = 0; i < emailsdates.length; i++) {
+      if (emailsdates[i][1] <= Date.now()) {
+        console.log("Updating...")
+        //query to update that student's hold to 1
+        var pool2 = pool.promise();
+        var queries=[]
+
+        var query = toUnnamed(
+          "UPDATE mydb.Student SET student_hold=1 WHERE net_id= :net_id;", {
+          net_id: emailsdates[i][2], 
+        });
+
+        let removed = emailsdates.splice(i, 1) //splice that entry
+        queries.push(pool2.query(query[0], query[1]));
+        var results = await Promise.all(queries).catch(() => { console.log("Some sql error in UPDATE"); });
+        console.log("Done")
+      }
+    }
+  }) ();
+}
+
+//Later, use sendmails()
+var job = new CronJob('* * * * *', updateholds);
+job.start();
 
 //emails end
 
@@ -539,16 +563,17 @@ router.post("/rent", (req, res) => {
       var tool_name = req.body.cart[i].item.name
       var id = req.body.customer.net_id
       var email = 'toolcributd@gmail.com'
-      var temp = new Date(Date.now())
-      //datedue.setTime(datedue.getTime() + (req.body.cart[i].item.hours*60*60*1000)); //add required number of hours
-      var datedue = new Date(temp.getTime() + (6 * 1000)); //for testing, add 6 seconds
+      var datedue = new Date(Date.now())
+      var temp= new Date(Date.now())
+      datedue.setTime(datedue.getTime() + (req.body.cart[i].item.hours*60*60*1000)); //add required number of hours
+      //var datedue = new Date(temp.getTime() + (6 * 1000)); //for testing, add 6 seconds
 
       //when there are actual emails in the DB, uncomment
       //results.forEach(([rows, fields]) => { emailsdates.push([rows[0], datedue]) });
 
       //tool crib always closes at 10
       //console.log("HOURS", datedue.getHours());
-      if (datedue.getHours() >= 22) { console.log("This rental time is shortened because the crib closes at 10"); datedue.setHours(21); datedue.setMinutes(50); }
+      //if (datedue.getHours() >= 22) { console.log("This rental time is shortened because the crib closes at 10"); datedue.setHours(21); datedue.setMinutes(50); }
       emailsdates.push([email, datedue, id, tool_name])
     }
     console.log("EMAILSDATES: " + emailsdates)
