@@ -1,4 +1,11 @@
 # API
+
+# Table of Contents
+1. [Parts](#parts)
+2. [Tools](#tools)
+3. [Groups and Students](#studentsgroups)
+
+<a name="parts"></a>
 ## Parts (Available for purchase)
 ### View all inventory parts
 `GET`, /inventory/parts
@@ -161,8 +168,7 @@ Failure Response : Status `400` Bad Request and errcode in response:
 
 or Status `500` Internal Server Error and errcode in response
 
-
-
+<a name="tools"></a>
 ## Tools (Available for rent)
 ### View all tools with status
 `GET`, /inventory/tools
@@ -402,6 +408,7 @@ CSV file with name "YYYYMMDD-YYYYMMDD_full_report.csv"
 Failure Response : Status `400` Bad Request and errcode in response:
 * 'MISSING_PARAMS' when start or end date missing
 
+<a name="studentsgroups"></a>
 ## Students and Groups
 
 ### Get a list of students and what group(s) they are in
