@@ -220,68 +220,24 @@ SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 
-CREATE VIEW mydb.group_details AS SELECT s.*, u.tool_id, u.status, u.checkout_date, u.due_date FROM 
-(SELECT ghs.group_id, ghs.net_id, s.name, s.email, s.utd_id, s.student_hold 
-FROM mydb.group_has_student ghs, mydb.student s
-WHERE ghs.net_id = s.net_id
-ORDER BY ghs.group_id, ghs.net_id) s
-LEFT JOIN
-(SELECT rtr.tool_id, "Rented" status, t.group_id group_id, t.net_id net_id, t.date checkout_date, 
-(cast(from_unixtime(rtr.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date 
-FROM mydb.transaction t , mydb.rented_tool rtr
-WHERE (t.transaction_id = rtr.transaction_id)
-	AND (rtr.returned_date IS NULL)
-	AND NOW() <= (cast(from_unixtime(rtr.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3)))
-UNION
-SELECT rto.tool_id, "Overdue" status, t.group_id group_id, t.net_id net_id, t.date checkout_date, 
-(cast(from_unixtime(rto.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date 
-FROM mydb.transaction t , mydb.rented_tool rto
-WHERE (t.transaction_id = rto.transaction_id)
-	AND (rto.returned_date IS NULL) 
-	AND NOW() > (cast(from_unixtime(rto.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) 
-UNION
-SELECT rta.tool_id, "Available" status, null group_id, null net_id, null checkout_date, null due_date
-FROM mydb.rental_tool rta
-WHERE rta.tool_id 
-	NOT IN (SELECT rt.tool_id
-		FROM mydb.transaction t, mydb.rented_tool rt
-		WHERE (t.transaction_id = rt.transaction_id)
-			AND(rt.returned_date IS NULL)
-		ORDER BY REVERSE (t.date))
-	AND rta.tool_id >= 0 
-UNION
-SELECT rtd.tool_id, "Deleted" status, null group_id, null net_id, null checkout_date, null due_date
-FROM mydb.rental_tool rtd
-WHERE rtd.tool_id 
-	NOT IN (SELECT rt.tool_id
-		FROM mydb.transaction t, mydb.rented_tool rt
-		WHERE (t.transaction_id = rt.transaction_id)
-			AND(rt.returned_date IS NULL)
-		ORDER BY REVERSE (t.date))
-	AND rtd.tool_id < 0
-) u
-ON
-u.net_id = s.net_id AND u.group_id = s.group_id;
-
-
-CREATE VIEW mydb.tool_status AS
+CREATE OR REPLACE VIEW mydb.tool_status AS
 SELECT * FROM mydb.rental_tool
 natural join
-(SELECT rtr.tool_id, "Rented" status, t.group_id group_id, t.net_id net_id, t.date checkout_date, 
+(SELECT rtr.tool_id, "Rented" status, t.group_id group_id, t.net_id net_id, rtr.hours_rented hours_rented, t.date checkout_date, 
 (cast(from_unixtime(rtr.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date 
 FROM mydb.transaction t , mydb.rented_tool rtr
 WHERE (t.transaction_id = rtr.transaction_id)
 	AND (rtr.returned_date IS NULL)
 	AND NOW() <= (cast(from_unixtime(rtr.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3)))
 UNION
-SELECT rto.tool_id, "Overdue" status, t.group_id group_id, t.net_id net_id, t.date checkout_date, 
+SELECT rto.tool_id, "Overdue" status, t.group_id group_id, t.net_id net_id, rto.hours_rented hours_rented, t.date checkout_date, 
 (cast(from_unixtime(rto.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) due_date 
 FROM mydb.transaction t , mydb.rented_tool rto
 WHERE (t.transaction_id = rto.transaction_id)
 	AND (rto.returned_date IS NULL) 
 	AND NOW() > (cast(from_unixtime(rto.hours_rented*60*60 + round((unix_timestamp(t.date)+30*5)/(60*5))*(60*5)) as datetime(3))) 
 UNION
-SELECT rta.tool_id, "Available" status, null group_id, null net_id, null checkout_date, null due_date
+SELECT rta.tool_id, "Available" status, null group_id, null net_id, null hours_rented, null checkout_date, null due_date
 FROM mydb.rental_tool rta
 WHERE rta.tool_id 
 	NOT IN (SELECT rt.tool_id
@@ -291,7 +247,7 @@ WHERE rta.tool_id
 		ORDER BY REVERSE (t.date))
 	AND rta.tool_id >= 0 
 UNION
-SELECT rtd.tool_id, "Deleted" status, null group_id, null net_id, null checkout_date, null due_date
+SELECT rtd.tool_id, "Deleted" status, null group_id, null net_id, null hours_rented, null checkout_date, null due_date
 FROM mydb.rental_tool rtd
 WHERE rtd.tool_id 
 	NOT IN (SELECT rt.tool_id
@@ -301,6 +257,17 @@ WHERE rtd.tool_id
 		ORDER BY REVERSE (t.date))
 	AND rtd.tool_id < 0
 ) u;
+
+CREATE OR REPLACE VIEW mydb.group_details AS SELECT s.*, u.tool_id, u.status, u.checkout_date, u.due_date FROM 
+(SELECT ghs.group_id, g.group_name, g.group_sponsor, ghs.net_id, ghs.display, s.name, s.email, s.utd_id, s.student_hold 
+FROM mydb.group_has_student ghs, mydb.student s, mydb.groups g
+WHERE ghs.net_id = s.net_id
+	AND ghs.group_id = g.group_id
+ORDER BY ghs.group_id, ghs.net_id) s
+LEFT JOIN
+(SELECT * FROM tool_status)u
+ON
+u.net_id = s.net_id AND u.group_id = s.group_id;
 
 
 
