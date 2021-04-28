@@ -276,7 +276,7 @@ router.post("/insert", (req, res) => {
                 console.log("That tool exists, but you have supplied different values for one of the attributes");
                 console.log("oldtuple" + oldtuples)
                 console.log("newtuple" + newtuples)
-                status = 400;
+                status = 412;
                 proceed = 0;
                 conflictinserts.push([oldtuples, newtuples])
             }
@@ -295,7 +295,7 @@ router.post("/insert", (req, res) => {
         results.forEach(([rows, fields]) => {
             if (rows.length == 1) {
                 console.log("That tool exists, and is entirely identical to one in the database. Will not be inserted.");
-                status = 400;
+                status = 412;
                 numduplicate = numduplicate +1;
                 proceed = 0;
             }
@@ -316,7 +316,7 @@ router.post("/insert", (req, res) => {
             "numtotal": 1, "numduplicate": numduplicate, "numsuccess": numsuccess, "numfailed": numfailed
         }
 
-        if (status == 400) {
+        if (status == 412) {
             return res.json(myjson);
         }
         else {

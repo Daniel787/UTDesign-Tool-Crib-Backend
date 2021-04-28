@@ -118,7 +118,7 @@ router.post("/insert", (req, res) => {
                 oldtuples.push({ "part_id": rows[0].part_id, "name": rows[0].name, "quantity_available": rows[0].quantity_available, "current_cost": parseFloat(rows[0].current_cost) })
                 newtuples.push({ "part_id": parseInt(id), "name": name, "quantity_available": parseInt(quantity), "current_cost": parseFloat(cost) })
                 console.log("That part exists, but you have supplied different values for one of the attributes");
-                status = 400;
+                status = 412;
                 proceed = 0;
             }
         });
@@ -139,7 +139,7 @@ router.post("/insert", (req, res) => {
         results.forEach(([rows, fields]) => {
             if (rows.length == 1) {
                 console.log("That part exists, and is entirely identical to one in the database. Will not be inserted.");
-                status = 400;
+                status = 412;
                 numduplicate = numduplicate + 1 
                 proceed = 0;
             }
@@ -154,7 +154,7 @@ router.post("/insert", (req, res) => {
                 current_cost: req.body.current_cost
             });
             queries.push(pool2.query(query[0], query[1]));
-            await Promise.all(queries).catch(() => { console.log("Some sql error in insertion"); status = 400; numfailed=numfailed+1;});
+            await Promise.all(queries).catch(() => { console.log("Some sql error in insertion"); status = 412; numfailed=numfailed+1;});
         }
         numsuccess= 1-(oldtuples.length + failedinserts.length);
         myjson = {
@@ -162,7 +162,7 @@ router.post("/insert", (req, res) => {
             "numtotal": 1, "numduplicate": numduplicate, "numsuccess": numsuccess, "numfailed": numfailed
         }
 
-        if (status == 400) {
+        if (status == 412) {
             return res.json(myjson);
         }
         else {
