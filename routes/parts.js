@@ -64,7 +64,7 @@ router.get("/search", (req, res) => {
     }
     else {
         //invalid parameters
-        return res.status(400).send("MISSING_PARAMS");
+        return res.json({"message":'MISSING_PARAMS'});
     }
 
     //query DB
@@ -174,7 +174,7 @@ router.post("/insert", (req, res) => {
 //i.e. http://localhost:port/inventory/parts/modify
 router.post("/modify", (req, res) => {
     if( validate(req.body.part_id,req.body.name,req.body.quantity_available,req.body.current_cost)  == -1){
-        return res.status(400).send('BAD_DATATYPES')
+        return res.json({"message":'BAD_DATATYPES'})
     }
 
     (async function sendquery(param) {
@@ -187,7 +187,7 @@ router.post("/modify", (req, res) => {
             current_cost: req.body.current_cost
         });
         if (req.body.part_id < 0) {
-            return res.status(400).send('DELETED_PART')
+            return res.json({"message":'DELETED_PART'})
         }
 
         queries.push(pool2.query(query[0], query[1]));
@@ -197,7 +197,7 @@ router.post("/modify", (req, res) => {
         console.log("done with queries")
         results.forEach(([rows, fields]) => { if (rows.length == 0) { console.log("No part with that ID"); status = 412; } });
         if (status == 400) {
-            return res.status(status).send("INVALID_ID");
+            return res.json({"message":'INVALID_ID'});
         }
 
         queries = []
@@ -211,7 +211,7 @@ router.post("/modify", (req, res) => {
         queries.push(pool2.query(query[0], query[1]));
         status = 200;
         var results2 = await Promise.all(queries);
-        return res.status(status).send("SUCCESS");
+        return res.json({"message":'SUCCESS'});
 
     })();
 });
@@ -234,7 +234,7 @@ router.post("/delete", (req, res) => {
         var results = await Promise.all(queries);
         results.forEach(([rows, fields]) => { if (rows.length == 0) { console.log("No part with that ID"); status = 400; } });
         if (status == 400) {
-            return res.status(status).send("INVALID_ID");
+            return res.json({"message":'INVALID_ID'});
         }
 
         console.log("down here")
@@ -250,10 +250,10 @@ router.post("/delete", (req, res) => {
         var status = 200;
         var results = await Promise.all(queries).catch(() => { console.log("Deletion failed."); status = 400; });
         if (status == 400) {
-            return res.status(status).send("SQL_ERROR");
+            return res.json({"message":'SQL_ERROR'});
         }
         else {
-            return res.status(status).send("SUCCESS")
+            return res.json({"message":'SUCCESS'});
         }
     })();
 });
@@ -286,7 +286,7 @@ router.post("/buy", (req, res) => {
         results.forEach(([rows, fields]) => { valid.push(rows[0]); console.log(rows[0]); });
 
         if (status != 200) {
-        return res.status(400).send('GROUP_HOLD');
+            return res.json({"message":'GROUP_HOLD'});
         }
 
         console.log("The group does not have a hold")
@@ -314,12 +314,12 @@ router.post("/buy", (req, res) => {
         });
       
         if (status == 400) {
-            return res.status(400).send("STUDENT_GROUP_MISMATCH");
+            return res.json({"message":'STUDENT_GROUP_MISMATCH'});
         }
 
         for (i = 0; i < req.body.cart.length; i++) {
             if (req.body.cart[i].item.part_id < 0) {
-                return res.status(400).send("DELETED_PART");
+                return res.json({"message":'DELETED_PART'});
             }
 
             var query = toUnnamed(
@@ -343,7 +343,7 @@ router.post("/buy", (req, res) => {
         });
 
         if (status != 200) {
-            res.status(status).send(valid)
+            return res.json({"message":'INVALID_FIELDS'});
         }
 
         //transaction is valid, so insert the transaction row and update the part quantities
@@ -365,9 +365,9 @@ router.post("/buy", (req, res) => {
         }
         var results = await Promise.all(queries).catch((error) => {
             console.log(error);
-            res.status(500).send(error.code);
+            return res.json({"message":'SQL_ERROR'});
         });
-        res.status(200).send("SUCCESS");
+        return res.json({"message":'SUCCESS'});
     })();
 });
 
@@ -394,7 +394,7 @@ router.post("/upload", (req, res) => {
             var quantity = req.body[i].quantity_available
 
             if (id < 0) {
-                return res.status(400).send("DELETED_PART");
+                return res.json({"message":'DELETED_PART'});
             }
 
             //console.log("name: " + name+"    email: " + email+"     id: " + id)
