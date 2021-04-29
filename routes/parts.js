@@ -262,33 +262,40 @@ router.post("/delete", (req, res) => {
 //http://localhost:3500/inventory/buy
 //include validate into this
 router.post("/buy", (req, res) => {
+    if(req.query.super){
+        var superbuy=1;
+      }
+      else{
+        var superbuy=0;
+      }
+
     (async function sendquery(param) {
         queries = []
         var status = 200;
+        if(! superbuy){
+            //CHECK: does the student have a hold?
+            var pool2= pool.promise();
+            var query = toUnnamed(
+                "select * "
+                + "from mydb.transaction, mydb.rented_tool, mydb.rental_tool, mydb.student"
+                +  " where mydb.transaction.transaction_id= mydb.rented_tool.transaction_id"
+                + " and mydb.transaction.net_id = mydb.student.net_id"
+                + " and mydb.rented_tool.tool_id = mydb.rental_tool.tool_id "
+                +  "and mydb.rented_tool.returned_date is null and mydb.rental_tool.tool_id > 0 and mydb.transaction.group_id = :group_id;" ,{
+                group_id: req.body.customer.group_id
+            });
+            
+            queries.push(pool2.query(query[0], query[1]));
+            var results = await Promise.all(queries);
+            var valid = []
 
-        //CHECK: does the student have a hold?
-        var pool2= pool.promise();
-        var query = toUnnamed(
-              "select * "
-            + "from mydb.transaction, mydb.rented_tool, mydb.rental_tool, mydb.student"
-            +  " where mydb.transaction.transaction_id= mydb.rented_tool.transaction_id"
-            + " and mydb.transaction.net_id = mydb.student.net_id"
-            + " and mydb.rented_tool.tool_id = mydb.rental_tool.tool_id "
-            +  "and mydb.rented_tool.returned_date is null and mydb.rental_tool.tool_id > 0 and mydb.transaction.group_id = :group_id;" ,{
-            group_id: req.body.customer.group_id
-        });
-        
-        queries.push(pool2.query(query[0], query[1]));
-        var results = await Promise.all(queries);
-        var valid = []
+            results.forEach(([rows, fields]) => { if (rows.length == 1) { console.log("That group has a hold"); console.log(rows.length); status = 400; } });
+            results.forEach(([rows, fields]) => { valid.push(rows[0]); console.log(rows[0]); });
 
-        results.forEach(([rows, fields]) => { if (rows.length == 1) { console.log("That group has a hold"); console.log(rows.length); status = 400; } });
-        results.forEach(([rows, fields]) => { valid.push(rows[0]); console.log(rows[0]); });
-
-        if (status != 200) {
-            return res.json({"message":'GROUP_HOLD'});
+            if (status != 200) {
+                return res.json({"message":'GROUP_HOLD'});
+            }
         }
-
         console.log("The group does not have a hold")
         queries = []
         
