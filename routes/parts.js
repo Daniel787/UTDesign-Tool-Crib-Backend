@@ -64,7 +64,7 @@ router.get("/search", (req, res) => {
     }
     else {
         //invalid parameters
-        return res.status(400).send("MISSING_PARAMS");
+        return res.json({"message":'MISSING_PARAMS'});
     }
 
     //query DB
@@ -118,7 +118,7 @@ router.post("/insert", (req, res) => {
                 oldtuples.push({ "part_id": rows[0].part_id, "name": rows[0].name, "quantity_available": rows[0].quantity_available, "current_cost": parseFloat(rows[0].current_cost) })
                 newtuples.push({ "part_id": parseInt(id), "name": name, "quantity_available": parseInt(quantity), "current_cost": parseFloat(cost) })
                 console.log("That part exists, but you have supplied different values for one of the attributes");
-                status = 400;
+                status = 412;
                 proceed = 0;
             }
         });
@@ -139,7 +139,7 @@ router.post("/insert", (req, res) => {
         results.forEach(([rows, fields]) => {
             if (rows.length == 1) {
                 console.log("That part exists, and is entirely identical to one in the database. Will not be inserted.");
-                status = 400;
+                status = 412;
                 numduplicate = numduplicate + 1 
                 proceed = 0;
             }
@@ -154,7 +154,7 @@ router.post("/insert", (req, res) => {
                 current_cost: req.body.current_cost
             });
             queries.push(pool2.query(query[0], query[1]));
-            await Promise.all(queries).catch(() => { console.log("Some sql error in insertion"); status = 400; numfailed=numfailed+1;});
+            await Promise.all(queries).catch(() => { console.log("Some sql error in insertion"); status = 412; numfailed=numfailed+1;});
         }
         numsuccess= 1-(oldtuples.length + failedinserts.length);
         myjson = {
@@ -162,7 +162,7 @@ router.post("/insert", (req, res) => {
             "numtotal": 1, "numduplicate": numduplicate, "numsuccess": numsuccess, "numfailed": numfailed
         }
 
-        if (status == 400) {
+        if (status == 412) {
             return res.json(myjson);
         }
         else {
@@ -174,7 +174,7 @@ router.post("/insert", (req, res) => {
 //i.e. http://localhost:port/inventory/parts/modify
 router.post("/modify", (req, res) => {
     if( validate(req.body.part_id,req.body.name,req.body.quantity_available,req.body.current_cost)  == -1){
-        return res.status(400).send('BAD_DATATYPES')
+        return res.json({"message":'BAD_DATATYPES'})
     }
 
     (async function sendquery(param) {
@@ -187,7 +187,7 @@ router.post("/modify", (req, res) => {
             current_cost: req.body.current_cost
         });
         if (req.body.part_id < 0) {
-            return res.status(400).send('DELETED_PART')
+            return res.json({"message":'DELETED_PART'})
         }
 
         queries.push(pool2.query(query[0], query[1]));
@@ -197,7 +197,7 @@ router.post("/modify", (req, res) => {
         console.log("done with queries")
         results.forEach(([rows, fields]) => { if (rows.length == 0) { console.log("No part with that ID"); status = 412; } });
         if (status == 400) {
-            return res.status(status).send("INVALID_ID");
+            return res.json({"message":'INVALID_ID'});
         }
 
         queries = []
@@ -211,7 +211,7 @@ router.post("/modify", (req, res) => {
         queries.push(pool2.query(query[0], query[1]));
         status = 200;
         var results2 = await Promise.all(queries);
-        return res.status(status).send("SUCCESS");
+        return res.json({"message":'SUCCESS'});
 
     })();
 });
@@ -234,26 +234,25 @@ router.post("/delete", (req, res) => {
         var results = await Promise.all(queries);
         results.forEach(([rows, fields]) => { if (rows.length == 0) { console.log("No part with that ID"); status = 400; } });
         if (status == 400) {
-            return res.status(status).send("INVALID_ID");
+            return res.json({"message":'INVALID_ID'});
         }
 
-        console.log("down here")
+        console.log("There is a part with id: " + part_id)
+        var pool2 = pool.promise();
         queries = []
-        var query = toUnnamed(
-            + " UPDATE `mydb`.`Inventory_Part` SET `part_id` = :part_id * -1 WHERE (`part_id` = :part_id);"
-            , {
-            part_id: part_id,
+        var query2 = toUnnamed("UPDATE mydb.inventory_part SET part_id = (:part_id * -1) WHERE (part_id = :part_id)", {
+            part_id: req.query.part_id,
         });
-
-        queries.push(pool2.query(query[0], query[1]));
+       
+        queries.push(pool2.query(query2[0], query2[1]));
 
         var status = 200;
-        var results = await Promise.all(queries).catch(() => { console.log("Deletion failed."); status = 400; });
+        var results = await Promise.all(queries);  //.catch(() => { console.log("Deletion failed."); status = 400; });
         if (status == 400) {
-            return res.status(status).send("SQL_ERROR");
+            return res.json({"message":'SQL_ERROR'});
         }
         else {
-            return res.status(status).send("SUCCESS")
+            return res.json({"message":'SUCCESS'});
         }
     })();
 });
@@ -262,33 +261,40 @@ router.post("/delete", (req, res) => {
 //http://localhost:3500/inventory/buy
 //include validate into this
 router.post("/buy", (req, res) => {
+    if(req.query.super){
+        var superbuy=1;
+      }
+      else{
+        var superbuy=0;
+      }
+
     (async function sendquery(param) {
         queries = []
         var status = 200;
+        if(! superbuy){
+            //CHECK: does the student have a hold?
+            var pool2= pool.promise();
+            var query = toUnnamed(
+                "select * "
+                + "from mydb.transaction, mydb.rented_tool, mydb.rental_tool, mydb.student"
+                +  " where mydb.transaction.transaction_id= mydb.rented_tool.transaction_id"
+                + " and mydb.transaction.net_id = mydb.student.net_id"
+                + " and mydb.rented_tool.tool_id = mydb.rental_tool.tool_id "
+                +  "and mydb.rented_tool.returned_date is null and mydb.rental_tool.tool_id > 0 and mydb.transaction.group_id = :group_id;" ,{
+                group_id: req.body.customer.group_id
+            });
+            
+            queries.push(pool2.query(query[0], query[1]));
+            var results = await Promise.all(queries);
+            var valid = []
 
-        //CHECK: does the student have a hold?
-        var pool2= pool.promise();
-        var query = toUnnamed(
-              "select * "
-            + "from mydb.transaction, mydb.rented_tool, mydb.rental_tool, mydb.student"
-            +  " where mydb.transaction.transaction_id= mydb.rented_tool.transaction_id"
-            + " and mydb.transaction.net_id = mydb.student.net_id"
-            + " and mydb.rented_tool.tool_id = mydb.rental_tool.tool_id "
-            +  "and mydb.rented_tool.returned_date is null and mydb.rental_tool.tool_id > 0 and mydb.transaction.group_id = :group_id;" ,{
-            group_id: req.body.customer.group_id
-        });
-        
-        queries.push(pool2.query(query[0], query[1]));
-        var results = await Promise.all(queries);
-        var valid = []
+            results.forEach(([rows, fields]) => { if (rows.length == 1) { console.log("That group has a hold"); console.log(rows.length); status = 400; } });
+            results.forEach(([rows, fields]) => { valid.push(rows[0]); console.log(rows[0]); });
 
-        results.forEach(([rows, fields]) => { if (rows.length == 1) { console.log("That group has a hold"); console.log(rows.length); status = 400; } });
-        results.forEach(([rows, fields]) => { valid.push(rows[0]); console.log(rows[0]); });
-
-        if (status != 200) {
-        return res.status(400).send('GROUP_HOLD');
+            if (status != 200) {
+                return res.json({"message":'GROUP_HOLD'});
+            }
         }
-
         console.log("The group does not have a hold")
         queries = []
         
@@ -314,12 +320,12 @@ router.post("/buy", (req, res) => {
         });
       
         if (status == 400) {
-            return res.status(400).send("STUDENT_GROUP_MISMATCH");
+            return res.json({"message":'STUDENT_GROUP_MISMATCH'});
         }
 
         for (i = 0; i < req.body.cart.length; i++) {
             if (req.body.cart[i].item.part_id < 0) {
-                return res.status(400).send("DELETED_PART");
+                return res.json({"message":'DELETED_PART'});
             }
 
             var query = toUnnamed(
@@ -343,7 +349,7 @@ router.post("/buy", (req, res) => {
         });
 
         if (status != 200) {
-            res.status(status).send(valid)
+            return res.json({"message":'INVALID_FIELDS'});
         }
 
         //transaction is valid, so insert the transaction row and update the part quantities
@@ -365,9 +371,9 @@ router.post("/buy", (req, res) => {
         }
         var results = await Promise.all(queries).catch((error) => {
             console.log(error);
-            res.status(500).send(error.code);
+            return res.json({"message":'SQL_ERROR'});
         });
-        res.status(200).send("SUCCESS");
+        return res.json({"message":'SUCCESS'});
     })();
 });
 
@@ -394,7 +400,7 @@ router.post("/upload", (req, res) => {
             var quantity = req.body[i].quantity_available
 
             if (id < 0) {
-                return res.status(400).send("DELETED_PART");
+                return res.json({"message":'DELETED_PART'});
             }
 
             //console.log("name: " + name+"    email: " + email+"     id: " + id)

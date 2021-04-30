@@ -12,7 +12,7 @@ router.get("/simple", (req, res) => {
 
   if (!req.query.start && !req.query.end) {
     //no parameters given
-    return res.status(400).send("MISSING_PARAMS");
+    return res.json({"message":'MISSING_PARAMS'});
   }
 
   var query = toUnnamed(
@@ -60,7 +60,7 @@ router.get("/medium", (req, res) => {
 
   if (!req.query.start && !req.query.end) {
     //no parameters given
-    return res.status(400).send("MISSING_PARAMS");
+    return res.json({"message":'MISSING_PARAMS'});
   }
 
   var query = toUnnamed(
@@ -119,7 +119,7 @@ router.get("/full", (req, res) => {
 
   if (!req.query.start && !req.query.end) {
     //no parameters given
-    return res.status(400).send("MISSING_PARAMS");
+    return res.json({"message":'MISSING_PARAMS'});
   }
 
   var query = toUnnamed(
