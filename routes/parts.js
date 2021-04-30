@@ -237,18 +237,17 @@ router.post("/delete", (req, res) => {
             return res.json({"message":'INVALID_ID'});
         }
 
-        console.log("down here")
+        console.log("There is a part with id: " + part_id)
+        var pool2 = pool.promise();
         queries = []
-        var query = toUnnamed(
-            + " UPDATE `mydb`.`Inventory_Part` SET `part_id` = :part_id * -1 WHERE (`part_id` = :part_id);"
-            , {
-            part_id: part_id,
+        var query2 = toUnnamed("UPDATE mydb.inventory_part SET part_id = (:part_id * -1) WHERE (part_id = :part_id)", {
+            part_id: req.query.part_id,
         });
-
-        queries.push(pool2.query(query[0], query[1]));
+       
+        queries.push(pool2.query(query2[0], query2[1]));
 
         var status = 200;
-        var results = await Promise.all(queries).catch(() => { console.log("Deletion failed."); status = 400; });
+        var results = await Promise.all(queries);  //.catch(() => { console.log("Deletion failed."); status = 400; });
         if (status == 400) {
             return res.json({"message":'SQL_ERROR'});
         }
