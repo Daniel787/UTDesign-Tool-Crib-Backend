@@ -52,7 +52,7 @@ router.get("/search", (req, res) => {
     //set query by arguments 'part_id' or 'name'
     if (req.query.part_id) {
         var myquery = toUnnamed(
-            "SELECT * FROM mydb.inventory_part p WHERE p.part_id = :part_id", {
+            "SELECT * FROM mydb.inventory_part p WHERE p.part_id IN (:part_id , -1* :part_id);", {
             part_id: req.query.part_id
         });
     }
