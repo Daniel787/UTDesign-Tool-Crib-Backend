@@ -201,12 +201,10 @@ function sendmails() {
 
 //structure of emailsdates: emails, date, netid, tool_name
 function updateholds(){
-  console.log("updateholds(): emailsdates.length: " + emailsdates.length);
-
   (async function sendquery(param) {//b/c multiple updates
     for (var i = 0; i < emailsdates.length; i++) {
       if (emailsdates[i][1] <= Date.now()) {
-        console.log("Updating...")
+        console.log("Updating a hold!...")
         //query to update that student's hold to 1
         var pool2 = pool.promise();
         var queries=[]
