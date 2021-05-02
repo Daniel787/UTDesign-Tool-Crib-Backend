@@ -324,11 +324,10 @@ router.post("/modify", (req, res) => {
 router.post("/upload", (req, res) => {
   console.log(req.body)
 
-  var failedinserts = []
+  var failed = []
   var newtuples = []
   var oldtuples = []
 
-  var failedgroups = []
   var oldgroups = []
   var newgroups = []  
 
@@ -342,7 +341,7 @@ router.post("/upload", (req, res) => {
       var email = req.body.groups[i].students[j].email
 
       console.log(name, net_id, email)
-      if (( (name == null || name == "")   &&    (email == null|| email == "")   &&   (net_id == null || net_id== "")    )) { 
+      if (( (name == null || name == "")   &&   (net_id == null || net_id== "")    )) { 
         console.log("Found an actual student");
         //actualgroups.push(req.body.groups[i].students[j])
         req.body.groups[i].students.splice(j,1);
@@ -353,55 +352,30 @@ router.post("/upload", (req, res) => {
   var goodgroups= req.body.groups; //we will splice conflicts and faileds out of this
 
   (async function sendquery(param) {
-    //Notes: we first run the group checks, then the student checks.
-    //Group checks: has group info changed? sponsor, name etc or is it null
-
+    //Notes: we first run the group checks, then the student checks
     
     //group checks
     console.log("Number of groups: " + req.body.groups.length)
     for (i = 0; i < req.body.groups.length; i++) {
-      //declare default values for these 
-      var group_id = req.body.groups[i].group_id; //not parsing int will lead to strange errors!
+      var group_id = req.body.groups[i].group_id;
       var group_name = req.body.groups[i].group_name;
       var group_sponsor = req.body.groups[i].group_sponsor;
 
-      //this regex also catches all-null groups, but i've included the check anyway
+      //this regex also catches all-null groups
       var regex=/[0-9]/; //only 1-9
       var letters=/[a-zA-Z]/
       if(! regex.test(group_id) || letters.test(group_id)){
-        failedgroups.push({ "group_id": group_id, "group_name": group_name, "group_sponsor": group_sponsor, 
+        failed.push({ "group_id": group_id, "group_name": group_name, "group_sponsor": group_sponsor, 
         "students":req.body.groups[i].students });
         continue;
       }
 
-      if (group_id == null || group_name == null || group_sponsor == null || group_id== ""  || group_name == "" || group_sponsor == "") {
-        //check to see if the group already exists
-        /*queries = []
-        var pool2 = pool.promise();
-      
-        var query = toUnnamed("SELECT * FROM mydb.groups g WHERE g.group_id = :group_id", {
-          group_id: group_id,
-          group_name: group_name,
-          group_sponsor: group_sponsor
-        });
-        queries.push(pool2.query(query[0], query[1]));
-
-        var results = await Promise.all(queries);
-        var numhits=0;
-        results.forEach(([rows, fields]) => { numhits=rows.length;  });
-  
-        if (numhits == 1) {  //should be only 1, not 2
-          console.log("Your group insert is bad, but we'll ignore it and just use the one already in the database.")
-          continue;
-        }
-        else{*/
+      if (group_id == null || group_name == null ||  group_id== ""  || group_name == "") {
           console.log("The group" + i + "is failed. Please fix it...")
-          failedgroups.push({ "group_id": group_id, "group_name": group_name, "group_sponsor": group_sponsor, 
+          failed.push({ "group_id": group_id, "group_name": group_name, "group_sponsor": group_sponsor, 
           "students":req.body.groups[i].students });
           goodgroups.splice(i,1);
           continue;
-       // }
-
       }
       
       queries = []
@@ -427,9 +401,9 @@ router.post("/upload", (req, res) => {
       var pool2 = pool.promise();
       var query = toUnnamed("SELECT g.group_id, g.group_name, g.group_sponsor FROM mydb.groups g WHERE g.group_id = :group_id AND (g.group_name <> :group_name"
       + " OR group_sponsor <> :group_sponsor)", {
-      group_id: group_id,
-      group_name: group_name,
-      group_sponsor: group_sponsor
+        group_id: group_id,
+        group_name: group_name,
+        group_sponsor: group_sponsor
       });
 
       queries.push(pool2.query(query[0], query[1]));
@@ -467,35 +441,12 @@ router.post("/upload", (req, res) => {
       queries.push(pool2.query(query[0], query[1]));
       var results2 = await Promise.all(queries).catch(() => {
         console.log("SOME SQL ERROR");
-        failedgroups.push({ "group_id": group_id, "group_name": group_name, "group_sponsor": group_sponsor, 
+        failed.push({ "group_id": group_id, "group_name": group_name, "group_sponsor": group_sponsor, 
         "students":req.body.groups[i].students })
         goodgroups.splice(i,1);
       });
     } //end group loop
 
-
-    /*
-    new return for failed and conflict:
-    {
-            "group_id": "45",
-            "group_name": "epcs6",
-            "group_sponsor": "nijk",
-            "students": [
-                {
-                    "net_id": "b721",
-                    "name": "new man",
-                    "email": "nmn2@utd"
-                },
-                {
-                    "net_id": "",
-                    "name": "",
-                    "email": ""
-                }
-            ]
-        }
-    */
-    var myjson = ""
-    myjson = { "conflictgroups": { "old": oldgroups, "new": newgroups }, "failedgroups": failedgroups, "conflictinserts": [], "failedinserts": [] }
 
 
     //STUDENT CHECKS
@@ -514,10 +465,10 @@ router.post("/upload", (req, res) => {
         var email = goodgroups[i].students[j].email
 
         console.log("NAME: " + name + "    NET_ID:  " + net_id + "   " + "    EMAIL: " + email)
-        if (name == null || email == null || net_id == null || name== "" || email== "" || net_id == "") {
-          if (!(    (name == null || name == "")   &&    (email == null|| email == "")   &&   (net_id == null || net_id== "")    )) { //don't want to push all-null students to failedinserts 
+        if (name == null ||  net_id == null || name== "" || net_id == "") {
+          if (!(    (name == null || name == "") &&   (net_id == null || net_id== "")    )) { //don't want to push all-null students to failedinserts 
             console.log("student " + j % 3 + " has a null field, pushing to failed inserts...")
-            failedinserts.push({ "net_id": net_id, "name": name, "email": email, "utd_id": -1, "student_hold": 0 });
+            failedinserts.push( { "net_id": net_id, "name": name, "email": email, "utd_id": -1, "student_hold": 0 });
             status=400;
           }
         }
@@ -556,8 +507,10 @@ router.post("/upload", (req, res) => {
           var results2 = await Promise.all(queries);
           results2.forEach(([rows, fields]) => { 
             if (rows.length != 0) {
-              oldtuples.push({ "net_id": rows[0].net_id, "name": rows[0].name, "email": rows[0].email, "utd_id:": rows[0].utd_id, "student_hold": rows[0].student_hold });
-              newtuples.push({ "net_id": net_id, "name": name, "email": email, "utd_id:": rows[0].utd_id, "student_hold": rows[0].student_hold });
+              oldtuples.push({ "group_id": goodgroups[i].group_id, "group_name": goodgroups[i].group_name, "group_sponsor": goodgroups[i].group_sponsor, 
+              "students": [ {"net_id": rows[0].net_id, "name": rows[0].name, "email": rows[0].email}]});
+              newtuples.push({ "group_id": goodgroups[i].group_id, "group_name": goodgroups[i].group_name, "group_sponsor": goodgroups[i].group_sponsor, 
+              "students": [ {"net_id": net_id, "name": name, "email": email}]});
               numhits= rows.length; 
             } 
           });
@@ -567,9 +520,8 @@ router.post("/upload", (req, res) => {
             continue; //continues inner loop?
           }
 
-      
 
-          //does the student, group pair exist
+          //does the student, group pair exist?
           queries = []
           var pool2 = pool.promise();
           var query = toUnnamed("SELECT * FROM mydb.Group_has_student ghs WHERE ghs.net_id= :net_id AND ghs.group_id = :group_id", {
@@ -620,7 +572,8 @@ router.post("/upload", (req, res) => {
             var results2 = await Promise.all(queries).catch(() => {
               console.log("One of the students failed to insert.");
               status = 400;
-              failedinserts.push({ "net_id": net_id, "name": name, "email": email, "utd_id:": -1, "student_hold": 0 });
+              failed.push({ "group_id": goodgroups[i].group_id, "group_name": goodgroups[i].group_name, "group_sponsor": goodgroups[i].group_sponsor, 
+              "students": [ {"net_id": net_id, "name": name, "email": email}]});
             });
           }
           else if (!newStudent && secondGroup) {
@@ -636,7 +589,8 @@ router.post("/upload", (req, res) => {
             var results2 = await Promise.all(queries).catch(() => {
               console.log("One of the student/group relationships failed to insert.");
               status = 400;
-              failedinserts.push({ "net_id": net_id, "name": name, "email": email, "utd_id:": -1, "student_hold": 0 });
+              failed.push({ "group_id": goodgroups[i].group_id, "group_name": goodgroups[i].group_name, "group_sponsor": goodgroups[i].group_sponsor, 
+              "students": [ {"net_id": net_id, "name": name, "email": email}]});
             });
           }
           else if (newStudent && secondGroup) {
@@ -651,10 +605,10 @@ router.post("/upload", (req, res) => {
     } //end student loop
 
     
-    var myjson2 = { "conflictgroups": {"old": oldgroups, "new": newgroups}, "failedgroups": failedgroups, "conflictinserts": {"old": oldtuples, "new": newtuples}, "failedinserts": failedinserts }
+    var myjson2 = { "failed" : failed, "conflictgroups": {"old": oldgroups, "new": newgroups},  "conflictinserts": {"old": oldtuples, "new": newtuples} }
     
-    //return here if any groups are screwed
-    if (oldtuples.length > 0 ||  failedinserts.length > 0 || oldgroups.length > 0 || failedgroups.length > 0) {
+    //return here if anything is screwed
+    if (oldtuples.length > 0 ||  failed.length > 0 || oldgroups.length > 0) {
       return res.json(myjson2);
     }
     else {
