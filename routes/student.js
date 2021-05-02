@@ -381,8 +381,7 @@ router.post("/upload", (req, res) => {
       queries = []
       var pool2 = pool.promise();
       //we want to examine matching group_id
-      var query = toUnnamed("SELECT * FROM mydb.groups g WHERE g.group_id = :group_id AND g.group_name = :group_name"
-        + " AND group_sponsor = :group_sponsor", {
+      var query = toUnnamed("SELECT * FROM mydb.groups g WHERE g.group_id = :group_id AND g.group_name = :group_name", {
         group_id: group_id,
         group_name: group_name,
         group_sponsor: group_sponsor
@@ -399,8 +398,7 @@ router.post("/upload", (req, res) => {
 
       //anything that makes it here is NOT a failed insert
       var pool2 = pool.promise();
-      var query = toUnnamed("SELECT g.group_id, g.group_name, g.group_sponsor FROM mydb.groups g WHERE g.group_id = :group_id AND (g.group_name <> :group_name"
-      + " OR group_sponsor <> :group_sponsor)", {
+      var query = toUnnamed("SELECT g.group_id, g.group_name, g.group_sponsor FROM mydb.groups g WHERE g.group_id = :group_id AND g.group_name <> :group_name", {
         group_id: group_id,
         group_name: group_name,
         group_sponsor: group_sponsor
@@ -477,8 +475,7 @@ router.post("/upload", (req, res) => {
           queries = []
           var pool2 = pool.promise();
           //we want to examine matching student id, but different something else
-          var query = toUnnamed("SELECT * FROM mydb.Student s WHERE s.net_id = :net_id AND name = :name AND"
-            + " email = :email", {
+          var query = toUnnamed("SELECT * FROM mydb.Student s WHERE s.net_id = :net_id AND name = :name", {
             name: name,
             email: email,
             net_id: net_id
@@ -497,8 +494,7 @@ router.post("/upload", (req, res) => {
           queries = []
           var pool2 = pool.promise();
           //examine for conflicts
-          var query = toUnnamed("SELECT s.net_id, s.name, s.email FROM mydb.Student s WHERE s.net_id = :net_id AND (name <> :name OR"
-            + " email <> :email)", {
+          var query = toUnnamed("SELECT s.net_id, s.name, s.email FROM mydb.Student s WHERE s.net_id = :net_id AND name <> :name", {
             name: name,
             email: email,
             net_id: net_id
