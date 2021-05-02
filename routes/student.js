@@ -313,6 +313,14 @@ router.post("/modify", (req, res) => {
   })();
 });
 
+
+
+
+
+
+
+
+
 router.post("/upload", (req, res) => {
   console.log(req.body)
 
@@ -322,11 +330,27 @@ router.post("/upload", (req, res) => {
 
   var failedgroups = []
   var oldgroups = []
-  var newgroups = []
+  var newgroups = []  
 
+  //splice all null students, so we don't return them in failed and conflict inserts
+  var i= req.body.groups.length;
+  while(i--) {
+    var j=req.body.groups[i].students.length;
+    while(j--) {
+      var name = req.body.groups[i].students[j].name
+      var net_id = req.body.groups[i].students[j].net_id
+      var email = req.body.groups[i].students[j].email
 
-  var i, j;
- 
+      console.log(name, net_id, email)
+      if (( (name == null || name == "")   &&    (email == null|| email == "")   &&   (net_id == null || net_id== "")    )) { 
+        console.log("Found an actual student");
+        //actualgroups.push(req.body.groups[i].students[j])
+        req.body.groups[i].students.splice(j,1);
+      }
+    }
+  }
+
+  var goodgroups= req.body.groups; //we will splice conflicts and faileds out of this
 
   (async function sendquery(param) {
     //Notes: we first run the group checks, then the student checks.
@@ -345,18 +369,14 @@ router.post("/upload", (req, res) => {
       var regex=/[0-9]/; //only 1-9
       var letters=/[a-zA-Z]/
       if(! regex.test(group_id) || letters.test(group_id)){
-        failedgroups.push({ "group_id": group_id, "group_name": group_name, "group_sponsor:": group_sponsor });
+        failedgroups.push({ "group_id": group_id, "group_name": group_name, "group_sponsor": group_sponsor, 
+        "students":req.body.groups[i].students });
         continue;
       }
 
       if (group_id == null || group_name == null || group_sponsor == null || group_id== ""  || group_name == "" || group_sponsor == "") {
         //check to see if the group already exists
-        if( (group_id == null || group_id== '') && (group_name == null || group_name== '') && (group_sponsor == null || group_sponsor== '')){
-          console.log("All null, skip")
-          continue;
-        }
-
-        queries = []
+        /*queries = []
         var pool2 = pool.promise();
       
         var query = toUnnamed("SELECT * FROM mydb.groups g WHERE g.group_id = :group_id", {
@@ -374,11 +394,13 @@ router.post("/upload", (req, res) => {
           console.log("Your group insert is bad, but we'll ignore it and just use the one already in the database.")
           continue;
         }
-        else{
-          console.log("The group" + i + "is failed and doesn't exist. Please fix it...")
-          failedgroups.push({ "group_id": group_id, "group_name": group_name, "group_sponsor:": group_sponsor });
+        else{*/
+          console.log("The group" + i + "is failed. Please fix it...")
+          failedgroups.push({ "group_id": group_id, "group_name": group_name, "group_sponsor": group_sponsor, 
+          "students":req.body.groups[i].students });
+          goodgroups.splice(i,1);
           continue;
-        }
+       // }
 
       }
       
@@ -429,6 +451,7 @@ router.post("/upload", (req, res) => {
       //we want to examine matching pgroup id, but difference something else
       if (numhits == 1) {
             console.log("That group exists, but you have supplied different values for one of the attributes");
+            goodgroups.splice(i,1);
             continue;
       }
       
@@ -444,32 +467,51 @@ router.post("/upload", (req, res) => {
       queries.push(pool2.query(query[0], query[1]));
       var results2 = await Promise.all(queries).catch(() => {
         console.log("SOME SQL ERROR");
-        failedgroups.push({ "group_id": group_id, "group_name": group_name, "group_sponsor": group_sponsor })
+        failedgroups.push({ "group_id": group_id, "group_name": group_name, "group_sponsor": group_sponsor, 
+        "students":req.body.groups[i].students })
+        goodgroups.splice(i,1);
       });
     } //end group loop
 
+
+    /*
+    new return for failed and conflict:
+    {
+            "group_id": "45",
+            "group_name": "epcs6",
+            "group_sponsor": "nijk",
+            "students": [
+                {
+                    "net_id": "b721",
+                    "name": "new man",
+                    "email": "nmn2@utd"
+                },
+                {
+                    "net_id": "",
+                    "name": "",
+                    "email": ""
+                }
+            ]
+        }
+    */
     var myjson = ""
     myjson = { "conflictgroups": { "old": oldgroups, "new": newgroups }, "failedgroups": failedgroups, "conflictinserts": [], "failedinserts": [] }
 
-    //return here if any groups are screwed
-    if (failedgroups.length > 0 || oldgroups.length > 0 ) {
-      return res.json(myjson);
-    }
 
     //STUDENT CHECKS
     console.log("STUDENT CHECKS...")
-    for (i = 0; i < req.body.groups.length; i++) {
-      var group_id = req.body.groups[i].group_id;
-      var group_name = req.body.groups[i].group_name;
-      var group_sponsor = req.body.groups[i].group_sponsor;
+    for (i = 0; i < goodgroups.length; i++) {
+      var group_id = goodgroups[i].group_id;
+      var group_name = goodgroups[i].group_name;
+      var group_sponsor = goodgroups[i].group_sponsor;
 
       var newStudent=1;
       var secondGroup=0;
 
-      for (j = 0; j < req.body.groups[i].students.length; j++) {
-        var name = req.body.groups[i].students[j].name
-        var net_id = req.body.groups[i].students[j].net_id
-        var email = req.body.groups[i].students[j].email
+      for (j = 0; j < goodgroups[i].students.length; j++) {
+        var name = goodgroups[i].students[j].name
+        var net_id = goodgroups[i].students[j].net_id
+        var email = goodgroups[i].students[j].email
 
         console.log("NAME: " + name + "    NET_ID:  " + net_id + "   " + "    EMAIL: " + email)
         if (name == null || email == null || net_id == null || name== "" || email== "" || net_id == "") {
@@ -606,13 +648,13 @@ router.post("/upload", (req, res) => {
           }
         }
       }
-    }
+    } //end student loop
 
     
-    var myjson2 = { "conflictgroups": [], "failedgroups": [], "conflictinserts": {"old": oldtuples, "new": newtuples}, "failedinserts": failedinserts }
+    var myjson2 = { "conflictgroups": {"old": oldgroups, "new": newgroups}, "failedgroups": failedgroups, "conflictinserts": {"old": oldtuples, "new": newtuples}, "failedinserts": failedinserts }
     
     //return here if any groups are screwed
-    if (oldtuples.length > 0 ||  failedinserts.length > 0) {
+    if (oldtuples.length > 0 ||  failedinserts.length > 0 || oldgroups.length > 0 || failedgroups.length > 0) {
       return res.json(myjson2);
     }
     else {
