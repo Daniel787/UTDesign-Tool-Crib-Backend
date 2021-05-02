@@ -468,7 +468,8 @@ router.post("/upload", (req, res) => {
         if (name == null ||  net_id == null || name== "" || net_id == "") {
           if (!(    (name == null || name == "") &&   (net_id == null || net_id== "")    )) { //don't want to push all-null students to failedinserts 
             console.log("student " + j % 3 + " has a null field, pushing to failed inserts...")
-            failedinserts.push( { "net_id": net_id, "name": name, "email": email, "utd_id": -1, "student_hold": 0 });
+            failed.push({ "group_id": goodgroups[i].group_id, "group_name": goodgroups[i].group_name, "group_sponsor": goodgroups[i].group_sponsor, 
+            "students": [ {"net_id": net_id, "name": name, "email": email}]});
             status=400;
           }
         }
