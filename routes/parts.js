@@ -32,7 +32,6 @@ function validate(id, name, quantity, cost) {
     return 1;
 }
 
-//i.e. http://localhost:port/inventory/parts
 router.get("/", (req, res) => {
     myquery = "SELECT * FROM mydb.inventory_part WHERE part_id > 0"
     pool.query(myquery, function (err, rows, fields) {
@@ -47,7 +46,6 @@ router.get("/", (req, res) => {
     })
 });
 
-//i.e. http://localhost:port/inventory/parts/search?part_id=12345
 router.get("/search", (req, res) => {
     //set query by arguments 'part_id' or 'name'
     if (req.query.part_id) {
@@ -171,7 +169,6 @@ router.post("/insert", (req, res) => {
     })();   
 });
 
-//i.e. http://localhost:port/inventory/parts/modify
 router.post("/modify", (req, res) => {
     if( validate(req.body.part_id,req.body.name,req.body.quantity_available,req.body.current_cost)  == -1){
         return res.json({"message":'BAD_DATATYPES'})
@@ -257,9 +254,6 @@ router.post("/delete", (req, res) => {
     })();
 });
 
-
-//http://localhost:3500/inventory/buy
-//include validate into this
 router.post("/buy", (req, res) => {
     if(req.query.super){
         var superbuy=1;
@@ -376,8 +370,6 @@ router.post("/buy", (req, res) => {
         return res.json({"message":'SUCCESS'});
     })();
 });
-
-
 
 router.post("/upload", (req, res) => {
     var failedinserts = []
@@ -508,8 +500,6 @@ router.post("/upload", (req, res) => {
         else {
             return res.json({"message":"SUCCESS"});
         }
-
-
     })();
 });
 
