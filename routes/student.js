@@ -328,8 +328,8 @@ router.post("/upload", (req, res) => {
   var newgroups= []
   var oldgroups=[]
 
-  var oldgroups = []
-  var newgroups = []  
+  var oldtuples = []
+  var newtuples = []  
 
   //splice all null students, so we don't return them in failed and conflict inserts
   var i= req.body.groups.length;
@@ -504,9 +504,9 @@ router.post("/upload", (req, res) => {
           var results2 = await Promise.all(queries);
           results2.forEach(([rows, fields]) => { 
             if (rows.length != 0) {
-              oldgroups.push({ "group_id": goodgroups[i].group_id, "group_name": goodgroups[i].group_name, "group_sponsor": goodgroups[i].group_sponsor, 
+              oldtuples.push({ "group_id": goodgroups[i].group_id, "group_name": goodgroups[i].group_name, "group_sponsor": goodgroups[i].group_sponsor, 
               "students": [ {"net_id": rows[0].net_id, "name": rows[0].name, "email": rows[0].email}]});
-              newgroups.push({ "group_id": goodgroups[i].group_id, "group_name": goodgroups[i].group_name, "group_sponsor": goodgroups[i].group_sponsor, 
+              newtuples.push({ "group_id": goodgroups[i].group_id, "group_name": goodgroups[i].group_name, "group_sponsor": goodgroups[i].group_sponsor, 
               "students": [ {"net_id": net_id, "name": name, "email": email}]});
               numhits= rows.length; 
             } 
@@ -602,10 +602,10 @@ router.post("/upload", (req, res) => {
     } //end student loop
 
     
-    var myjson2 = { "failed" : failed, "conflicts": {"old": oldgroups, "new": newgroups}}
+    var myjson2 = { "failed" : failed, "conflictgroups": {"old": oldgroups, "new": newgroups},  "conflictinserts": {"old": oldtuples, "new": newtuples} }
     
     //return here if anything is screwed
-    if (failed.length > 0 || oldgroups.length > 0) {
+    if (oldtuples.length > 0 ||  failed.length > 0 || oldgroups.length > 0) {
       return res.json(myjson2);
     }
     else {
