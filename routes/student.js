@@ -332,6 +332,7 @@ router.post("/upload", (req, res) => {
       var email = req.body.groups[i].students[j].email
 
       console.log(name, net_id, email)
+  
       if (( (name == null || name == "")   &&   (net_id == null || net_id== "")    )) { 
         console.log("Found an actual student");
         //actualgroups.push(req.body.groups[i].students[j])
@@ -340,6 +341,7 @@ router.post("/upload", (req, res) => {
     }
   }
 
+
   var goodgroups= req.body.groups; //we will splice conflicts and faileds out of this
 
   (async function sendquery(param) {
@@ -347,7 +349,8 @@ router.post("/upload", (req, res) => {
     
     //group checks
     console.log("Number of groups: " + req.body.groups.length)
-    for (i = 0; i < req.body.groups.length; i++) {
+    var i= req.body.groups.length;
+    while(i--) {
       var group_id = req.body.groups[i].group_id;
       var group_name = req.body.groups[i].group_name;
       var group_sponsor = req.body.groups[i].group_sponsor;
@@ -436,11 +439,12 @@ router.post("/upload", (req, res) => {
       });
     } //end group loop
 
-
+    console.log("Good groups"+ goodgroups)
 
     //STUDENT CHECKS
-    console.log("STUDENT CHECKS...")
+    
     for (i = 0; i < goodgroups.length; i++) {
+      console.log("STUDENT CHECKS...")
       var group_id = goodgroups[i].group_id;
       var group_name = goodgroups[i].group_name;
       var group_sponsor = goodgroups[i].group_sponsor;
