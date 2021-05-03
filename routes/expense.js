@@ -14,13 +14,14 @@ router.get("/simple", (req, res) => {
   }
 
   var query = toUnnamed(
-    "SELECT t.group_id `group_id`, SUM(pp.purchased_cost * pp.quantity_purchased) `total` "
+    "SELECT t.group_id `group_id`, g.group_name `group name`, SUM(pp.purchased_cost * pp.quantity_purchased) `total` "
     + "FROM "
     + "(SELECT * FROM mydb.transaction "
     + "WHERE transaction.type='purchase' "
     + "AND (:start <= transaction.date) AND (transaction.date < :end + '00000001')) t, "
-    + "mydb.purchased_part pp "
+    + "mydb.purchased_part pp, mydb.groups g "
     + "WHERE t.transaction_id = pp.transaction_id "
+    + "AND t.group_id = g.group_id "
     + "GROUP BY t.group_id "
     + "ORDER BY t.group_id;", {
     start: req.query.start,
@@ -60,7 +61,7 @@ router.get("/medium", (req, res) => {
   }
 
   var query = toUnnamed(
-    "SELECT gt.group_id, gt.group_total, st.net_id, st.student_total "
+    "SELECT gt.group_id, g.group_name `group name`, gt.group_total `group total`, st.net_id, st.student_total `student total`"
     + "FROM "
     + "(SELECT t.group_id, t.net_id, SUM(pp.purchased_cost * pp.quantity_purchased) student_total "
     + "FROM "
@@ -78,7 +79,8 @@ router.get("/medium", (req, res) => {
     + "  AND (:start <= transaction.date) AND (transaction.date < :end + '00000001')) t, "
     + "    mydb.purchased_part pp "
     + "WHERE t.transaction_id = pp.transaction_id "
-    + "GROUP BY t.group_id) gt "
+    + "GROUP BY t.group_id) gt, mydb.groups g "
+    + "WHERE gt.group_id = g.group_id "
     + "ORDER BY gt.group_id, st.net_id; ", {
     start: req.query.start,
     end: req.query.end,
@@ -117,7 +119,7 @@ router.get("/full", (req, res) => {
   }
 
   var query = toUnnamed(
-    "SELECT gs.group_id, gs.group_total, gs.net_id, gs.student_total, li.part_id,  li.`quantity_purchased*cost_per_unit`, li.quantity_purchased, li.cost_per_unit, li.date "
+    "SELECT gs.group_id, g.group_name `group name`, gs.group_total `group total`, gs.net_id, gs.student_total `student total`, li.part_id,  li.`quantity_purchased*cost_per_unit`, li.quantity_purchased, li.cost_per_unit, li.date "
     + "FROM "
     + "(SELECT t.group_id, t.net_id, pp.part_id, pp.quantity_purchased, pp.purchased_cost cost_per_unit, pp.quantity_purchased*pp.purchased_cost as `quantity_purchased*cost_per_unit`, t.date "
     + "FROM "
@@ -147,7 +149,8 @@ router.get("/full", (req, res) => {
     + "  AND (:start <= transaction.date) AND (transaction.date < :end + '00000001')) t, "
     + "    mydb.purchased_part pp "
     + "WHERE t.transaction_id = pp.transaction_id "
-    + "GROUP BY t.group_id) gt) gs "
+    + "GROUP BY t.group_id) gt) gs, mydb.groups g "
+    + "WHERE gs.group_id = g.group_id "
     + "ORDER BY gs.group_id, gs.net_id, li.part_id; ", {
     start: req.query.start,
     end: req.query.end,
