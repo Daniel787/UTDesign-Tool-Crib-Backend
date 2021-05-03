@@ -748,46 +748,33 @@ Success Response : Status `200`
 Failure Response : Status `400` Bad Request and JSON in response:
 ```
 {
-    "conflictgroups": [
+    "conflicts": [
         {
             "group_id" : {INT},
             "group_name" :{STRING},
-            "group_sponsor": {STRING}
+            "group_sponsor": {STRING},
+            "students": [
+                {
+                    "net_id": {STRING},
+                    "name": {STRING},
+                    "email": {STRING}
+                }
+            ]
         }
     ],
-    "failedgroups": [
+    "failed": [
         {
             "group_id" : {INT},
             "group_name" :{STRING},
-            "group_sponsor": {STRING}
+            "group_sponsor": {STRING},
+            "students": [
+                {
+                    "group_id" : {INT},
+                    "group_name" :{STRING},
+                    "group_sponsor": {STRING}
+                }
+            ]
         }
     ]
-    "conflictinserts": {
-        "old": [
-            {
-               "net_id": {STRING},
-                "name": {STRING},
-                "email": {STRING}
-            }
-        ],
-        "new": [
-            {
-               "net_id": {STRING},
-                "name": {STRING},
-                "email": {STRING}
-            }
-        ]
-    },
-    "failedinserts": [
-        {
-            "net_id": {STRING},
-            "name": {STRING},
-            "email": {STRING}
-        }
-    ],
-    "numtotal": {INT},
-    "numduplicate": {INT},
-    "numsuccess": {INT},
-    "numfailed": {INT}
 }
 ```
