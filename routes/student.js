@@ -101,7 +101,6 @@ router.get("/withgroups/search", (req, res) => {
   })
 });
 
-//i.e. http://localhost:port/student/search?net_id=180004
 router.get("/search", (req, res) => {
   //arguments
   var net_id = req.query.net_id
@@ -114,7 +113,6 @@ router.get("/search", (req, res) => {
 });
 
 router.get("/holds", (req, res) => {
-
   myquery = "SELECT * FROM mydb.student WHERE student_hold = true"
   pool.query(myquery, function (err, rows, fields) {
     if (err) console.log(err)
@@ -123,7 +121,6 @@ router.get("/holds", (req, res) => {
 });
 
 router.get("/holds/detailed", (req, res) => {
-
   myquery =
     "select mydb.transaction.group_id, mydb.transaction.net_id, mydb.student.name, mydb.rental_tool.tool_id, mydb.rental_tool.name, mydb.transaction.date as rental_start "
     + "from mydb.transaction, mydb.rented_tool, mydb.rental_tool, mydb.student "
@@ -139,7 +136,6 @@ router.get("/holds/detailed", (req, res) => {
 
 
 router.get("/holds/withtools/json", (req, res) => {
-
   myquery = 
    "SELECT JSON_OBJECT('net_id', s.net_id, 'name', s.name, 'email', s.email, 'utd_id', s.utd_id, 'hold', s.student_hold, 'tools',  "
   +"JSON_ARRAYAGG(JSON_OBJECT('group_id', t.group_id, 'tool_id', tool.tool_id, 'tool_name', tool.name, 'start_date', t.date, 'hours_rented', rt.hours_rented, 'due_date',  "
@@ -164,7 +160,6 @@ router.get("/holds/withtools/json", (req, res) => {
   name: req.body.name,
   student_hold: req.body.student_hold
 });*/
-
 router.post("/insert", (req, res) => {
   var numduplicate = 0, numsuccess = 0, numfailed = 0;
 
@@ -264,12 +259,8 @@ router.post("/insert", (req, res) => {
           return res.json({"message":"SUCCESS"});
       }
   })(); 
-  
-
-  
 });
 
-//i.e. http://localhost:port/group/modify
 router.post("/modify", (req, res) => {
   (async function sendquery(param) {
     queries = []
@@ -501,11 +492,11 @@ router.post("/upload", (req, res) => {
             results.forEach(([rows, fields]) => { if (rows.length == 0) { secondGroup = 0; console.log("The student,group pair already exissts"); } });
 
 
-            //is he joining a second group?
+            //are they joining a second group?
 
             queries = []
             var pool2 = pool.promise();
-            //query is bad- should return if the student exists AND if his group,student pair is not in the table
+            //query is bad- should return if the student exists AND if the group,student pair is not in the table
             console.log("GHS PAIRS: ", net_id, "       ", group_id)
             var query = toUnnamed("SELECT * FROM mydb.Group_has_student ghs WHERE ghs.group_id = :group_id AND ghs.net_id= :net_id", {
               net_id: net_id,

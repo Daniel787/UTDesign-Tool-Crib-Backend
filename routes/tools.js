@@ -20,9 +20,10 @@ function validate(id, name) {
   return 1;
 }
 
-//i.e. http://localhost:port/inventory/tools
-//doesnt show deleted tools
+
+
 router.get("/", (req, res) => {
+  //doesnt show deleted tools
   myquery =
      "SELECT * FROM mydb.tool_status WHERE tool_status.tool_id > 0;"
   pool.query(myquery, function (err, rows, fields) {
@@ -31,9 +32,9 @@ router.get("/", (req, res) => {
   });
 });
 
-//i.e. http://localhost:port/inventory/tools/search?tool_id=111
-//DOES show deleted tools
+
 router.get("/search", (req, res) => {
+  //DOES show deleted tools
   //set query by arguments 'tool_id' or 'name'
   if (req.query.tool_id) {
     var myquery = toUnnamed(
@@ -233,7 +234,6 @@ job.start();
 
 
 //tool/rental start
-
 router.post("/insert", (req, res) => {
   var numduplicate = 0, numsuccess = 0, numfailed = 0;
 
@@ -547,7 +547,6 @@ router.post("/rent", (req, res) => {
       return res.json({"message":'UNKNOWN_RENTAL_ERROR'});
     }
 
-
     console.log("tool 4- Push email to emailsdates")
     //Add: push the email of the student and the date +2hrs to emailsdates
     var query = toUnnamed("SELECT email FROM mydb.Student WHERE net_id=:net_id ", {
@@ -584,7 +583,6 @@ router.post("/rent", (req, res) => {
 
 //we want the return date to be null here, unlike the above route
 //you can return multiple items at once
-//i.e. http://localhost:port/inventory/tools/return?tool_id=111
 router.post("/return", (req, res) => {
   if(validate(req.query.tool_id, " ") == -1){
     return res.json({"message":'BAD_DATATYPES'});
@@ -680,5 +678,4 @@ router.post("/return", (req, res) => {
 
 
 //tool/rental end
-
 module.exports = router;

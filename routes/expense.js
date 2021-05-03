@@ -6,8 +6,6 @@ var toUnnamed = require('named-placeholders')();
 var pool = require('../db.js')
 
 //SIMPLE DETAIL REPORT
-//i.e. http://localhost:port/expense/simple?year=YYYY&month=MM
-//i.e. http://localhost:3500/expense/simple?year=2021&month=03
 router.get("/simple", (req, res) => {
 
   if (!req.query.start && !req.query.end) {
@@ -54,8 +52,6 @@ router.get("/simple", (req, res) => {
 
 
 //MEDIUM DETAIL REPORT
-//i.e. http://localhost:port/expense/medium?year=YYYY&month=MM
-//i.e. http://localhost:3500/expense/medium?year=2021&month=03
 router.get("/medium", (req, res) => {
 
   if (!req.query.start && !req.query.end) {
@@ -113,8 +109,6 @@ router.get("/medium", (req, res) => {
 
 
 //FULL DETAIL REPORT
-//i.e. http://localhost:port/expense/full?year=YYYY&month=MM
-//i.e. http://localhost:3500/expense/full?year=2021&month=03
 router.get("/full", (req, res) => {
 
   if (!req.query.start && !req.query.end) {
@@ -180,9 +174,6 @@ router.get("/full", (req, res) => {
     }
   })
 });
-
-
-
 
 router.get("/toolstats", (req, res) => {
 
