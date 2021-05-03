@@ -253,7 +253,7 @@ router.post("/insert", (req, res) => {
       }
 
       if (status == 400) {
-          return res.json(myjson);
+        return res.json({"message":"FAILURE"});
       }
       else {
           return res.json({"message":"SUCCESS"});
