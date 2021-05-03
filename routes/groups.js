@@ -354,7 +354,7 @@ router.post("/insert", (req, res) => {
               "conflictinserts": { "old": oldtuples, "new": newtuples }, "failedinserts": failedinserts,
               "numtotal": 1, "numduplicate": numduplicate, "numsuccess": numsuccess, "numfailed": numfailed
           }
-          return res.json(myjson);
+          return res.json({message:"FAILURE"})
       }
 
       var pool2 = pool.promise();
@@ -418,7 +418,7 @@ router.post("/insert", (req, res) => {
       }
 
       if (status == 400) {
-          return res.json(myjson);
+          return res.json({ message: "FAILURE" });
       }
       else {
         return res.json({ message: "SUCCESS" });
