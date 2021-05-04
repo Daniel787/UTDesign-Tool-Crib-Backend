@@ -301,7 +301,7 @@ router.post("/insertMember", (req, res) => {
           }
       });
       if(status == 400){
-        return res.json({ message: "SUCCESS" });
+        return res.json({ message: "DUPLICATE" });
       }
 
       //if(proceed){
