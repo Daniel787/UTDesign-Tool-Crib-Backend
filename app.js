@@ -7,8 +7,9 @@ const cors = require('cors')
 const nodemon = require('nodemon');
 var app = express();
 
-app.listen(process.env.PORT || 3006, () => {
-  console.log('Go to http://localhost:'+(process.env.PORT || 3006)+'/inventory/parts to see parts');
+var server = app.listen(process.env.PORT, '0.0.0.0', () => {
+  console.log('Server running on \thttp://%s:%s', '127.0.0.1', process.env.PORT);
+  console.log('or on \t\t\thttp://%s:%s', server.address().address, server.address().port);
  });
 
 // view engine setup
